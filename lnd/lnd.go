@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/BoltzExchange/boltz-lnd/lightning"
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -47,6 +48,10 @@ type LND struct {
 	chainNotifier chainrpc.ChainNotifierClient
 }
 
+const retryInterval = 15
+
+var retryMessage = "Retrying in " + strconv.Itoa(retryInterval) + " seconds"
+
 func (lnd *LND) Connect() error {
 	creds, err := credentials.NewClientTLSFromFile(lnd.Certificate, "")
 
@@ -80,8 +85,22 @@ func (lnd *LND) Connect() error {
 	return nil
 }
 
-func (lnd *LND) GetInfo() (*lnrpc.GetInfoResponse, error) {
+func (lnd *LND) getInfo() (*lnrpc.GetInfoResponse, error) {
 	return lnd.client.GetInfo(lnd.ctx, &lnrpc.GetInfoRequest{})
+}
+
+func (lnd *LND) GetInfo() (*lightning.LightningInfo, error) {
+	info, err := lnd.getInfo()
+	if err != nil {
+		return nil, err
+	}
+	return &lightning.LightningInfo{
+		Pubkey:      info.IdentityPubkey,
+		BlockHeight: info.BlockHeight,
+		Version:     info.Version,
+		Network:     info.Chains[0].Network,
+		Synced:      info.SyncedToChain,
+	}, nil
 }
 
 func (lnd *LND) ConnectPeer(pubKey string, host string) (*lnrpc.ConnectPeerResponse, error) {

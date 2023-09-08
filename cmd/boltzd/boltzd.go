@@ -8,7 +8,6 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/nursery"
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	bitcoinCfg "github.com/btcsuite/btcd/chaincfg"
-	"github.com/lightningnetwork/lnd/lnrpc"
 	litecoinCfg "github.com/ltcsuite/ltcd/chaincfg"
 )
 
@@ -47,14 +46,15 @@ func Init(cfg *boltz_lnd.Config) {
 
 	lndInfo := connectToLnd(cfg.LND)
 
-	checkLndVersion(lndInfo)
+	checkLightningVersion(lndInfo)
 
-	symbol, chainParams := parseChain(lndInfo.Chains[0])
-	logger.Info("Parsed chain: " + symbol + " " + chainParams.Name)
+	chainParams := parseChain(lndInfo.Network)
+	symbol := "BTC"
+	logger.Info("Parsed chain: " + chainParams.Name)
 
 	cfg.LND.ChainParams = chainParams
 
-	waitForLndSynced(cfg.LND)
+	waitForLightningSynced(cfg.Lightning)
 
 	setBoltzEndpoint(cfg.Boltz, chainParams.Name)
 	cfg.Boltz.Init(symbol)
@@ -99,45 +99,21 @@ func Start(cfg *boltz_lnd.Config) {
 	}
 }
 
-func parseChain(chain *lnrpc.Chain) (symbol string, params *bitcoinCfg.Params) {
-	switch chain.Chain {
-	case "bitcoin":
-		symbol = "BTC"
-	case "litecoin":
-		symbol = "LTC"
+func parseChain(network string) (params *bitcoinCfg.Params) {
+
+	switch network {
+	case "mainnet":
+		// #reckless
+		params = &bitcoinCfg.MainNetParams
+	case "testnet":
+		params = &bitcoinCfg.TestNet3Params
+	case "regtest":
+		params = &bitcoinCfg.RegressionNetParams
 	default:
-		logger.Fatal("Chain " + chain.Chain + " not supported")
+		logger.Fatal("Network " + network + " no supported")
 	}
 
-	switch symbol {
-	case "BTC":
-		switch chain.Network {
-		case "mainnet":
-			// #reckless
-			params = &bitcoinCfg.MainNetParams
-		case "testnet":
-			params = &bitcoinCfg.TestNet3Params
-		case "regtest":
-			params = &bitcoinCfg.RegressionNetParams
-		default:
-			logger.Fatal("Chain " + chain.Network + " no supported")
-		}
-
-	case "LTC":
-		switch chain.Network {
-		case "mainnet":
-			// #reckless
-			params = utils.ApplyLitecoinParams(litecoinCfg.MainNetParams)
-		case "testnet":
-			params = utils.ApplyLitecoinParams(litecoinCfg.TestNet4Params)
-		case "regtest":
-			params = utils.ApplyLitecoinParams(litecoinCfg.RegressionNetParams)
-		default:
-			logger.Fatal("Chain " + chain.Network + " no supported")
-		}
-	}
-
-	return symbol, params
+	return params
 }
 
 func setBoltzEndpoint(boltz *boltz.Boltz, chain string) {

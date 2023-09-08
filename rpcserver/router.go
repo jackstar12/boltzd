@@ -8,9 +8,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"math"
+	"strconv"
+
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/BoltzExchange/boltz-lnd/database"
+	"github.com/BoltzExchange/boltz-lnd/lightning"
 	"github.com/BoltzExchange/boltz-lnd/lnd"
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/nursery"
@@ -19,8 +23,6 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/zpay32"
-	"math"
-	"strconv"
 )
 
 type routedBoltzServer struct {
@@ -29,10 +31,11 @@ type routedBoltzServer struct {
 	symbol      string
 	chainParams *chaincfg.Params
 
-	lnd      *lnd.LND
-	boltz    *boltz.Boltz
-	nursery  *nursery.Nursery
-	database *database.Database
+	lightning lightning.LightningNode
+	lnd       *lnd.LND
+	boltz     *boltz.Boltz
+	nursery   *nursery.Nursery
+	database  *database.Database
 }
 
 func handleError(err error) error {
@@ -44,7 +47,7 @@ func handleError(err error) error {
 }
 
 func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoRequest) (*boltzrpc.GetInfoResponse, error) {
-	lndInfo, err := server.lnd.GetInfo()
+	lightningInfo, err := server.lightning.GetInfo()
 
 	if err != nil {
 		return nil, handleError(err)
@@ -77,8 +80,8 @@ func (server *routedBoltzServer) GetInfo(_ context.Context, _ *boltzrpc.GetInfoR
 	return &boltzrpc.GetInfoResponse{
 		Symbol:              server.symbol,
 		Network:             server.chainParams.Name,
-		LndPubkey:           lndInfo.IdentityPubkey,
-		BlockHeight:         lndInfo.BlockHeight,
+		LndPubkey:           lightningInfo.Pubkey,
+		BlockHeight:         lightningInfo.BlockHeight,
 		PendingSwaps:        pendingSwapIds,
 		PendingReverseSwaps: pendingReverseSwapIds,
 	}, nil
