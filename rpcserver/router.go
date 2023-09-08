@@ -475,7 +475,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 		}
 	} else {
 		var err error
-		claimAddress, err = server.lnd.NewAddress()
+		claimAddress, err = server.lightning.NewAddress()
 
 		if err != nil {
 			return nil, handleError(err)

@@ -33,7 +33,7 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 			if len(swapsToRefund) > 0 {
 				logger.Info("Found " + strconv.Itoa(len(swapsToRefund)) + " Swaps to refund at height " + strconv.FormatUint(uint64(newBlock.Height), 10))
 
-				addressString, err := nursery.lnd.NewAddress()
+				addressString, err := nursery.lightning.NewAddress()
 
 				if err != nil {
 					logger.Error("Could not get new address from LND: " + err.Error())

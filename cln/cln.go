@@ -133,6 +133,16 @@ func (c *Cln) CreateInvoice(value int64, preimage []byte, expiry int64, memo str
 	}, nil
 }
 
+func (c *Cln) NewAddress() (string, error) {
+	res, err := c.Client.NewAddr(context.Background(), &protos.NewaddrRequest{
+		//Addresstype: &protos.NewaddrRequest_BECH32,
+	})
+	if err != nil {
+		return "", err
+	}
+	return *res.Bech32, nil
+}
+
 func (c *Cln) PaymentStatus(preimageHash string) (*lightning.PaymentStatus, error) {
 	hash, err := hex.DecodeString(preimageHash)
 	if err != nil {
