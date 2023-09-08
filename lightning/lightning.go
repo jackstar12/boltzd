@@ -41,6 +41,7 @@ type AddInvoiceResponse struct {
 }
 
 type LightningNode interface {
+	Connect() error
 	//Name() string
 	//NodeType() LightningNodeType
 	//PaymentStatus(preimageHash string) (*PaymentStatus, error)

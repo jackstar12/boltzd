@@ -38,13 +38,13 @@ func Init(cfg *boltz_lnd.Config) {
 		logger.Fatal("Could not connect to database: " + err.Error())
 	}
 
-	err = cfg.LND.Connect()
+	err = cfg.Lightning.Connect()
 
 	if err != nil {
-		logger.Fatal("Could not initialize LND client: " + err.Error())
+		logger.Fatal("Could not initialize lightning client: " + err.Error())
 	}
 
-	lndInfo := connectToLnd(cfg.LND)
+	lndInfo := connectLightning(cfg.Lightning)
 
 	checkLightningVersion(lndInfo)
 
