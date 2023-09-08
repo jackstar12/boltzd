@@ -261,7 +261,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc.CreateSwapRequest) (*boltzrpc.CreateSwapResponse, error) {
 	logger.Info("Creating Swap for " + strconv.FormatInt(request.Amount, 10) + " satoshis")
 
-	invoice, err := server.lnd.AddInvoice(int64(request.Amount), nil, 0, utils.GetSwapMemo(server.symbol))
+	invoice, err := server.lightning.CreateInvoice(int64(request.Amount), nil, 0, utils.GetSwapMemo(server.symbol))
 
 	if err != nil {
 		return nil, handleError(err)
@@ -307,7 +307,7 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 		RefundTransactionId: "",
 	}
 
-	err = boltz.CheckSwapScript(swap.RedeemScript, invoice.RHash, swap.PrivateKey, swap.TimoutBlockHeight)
+	err = boltz.CheckSwapScript(swap.RedeemScript, invoice.PaymentHash, swap.PrivateKey, swap.TimoutBlockHeight)
 
 	if err != nil {
 		return nil, handleError(err)

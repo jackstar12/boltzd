@@ -309,7 +309,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 			return
 		}
 
-		invoice, err := nursery.lnd.AddInvoice(
+		invoice, err := nursery.lightning.CreateInvoice(
 			int64(swapRates.SubmarineSwap.InvoiceAmount),
 			swap.Preimage,
 			utils.CalculateInvoiceExpiry(swap.TimoutBlockHeight-info.BlockHeight, utils.GetBlockTime(nursery.symbol)),

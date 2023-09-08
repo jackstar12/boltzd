@@ -107,6 +107,32 @@ func (c *Cln) SanityCheck() (string, error) {
 	return info.Version, nil
 }
 
+func (c *Cln) CreateInvoice(value int64, preimage []byte, expiry int64, memo string) (*lightning.AddInvoiceResponse, error) {
+	parsed_expiry := uint64(expiry)
+	invoice, err := c.Client.Invoice(context.Background(), &protos.InvoiceRequest{
+		// wtf is this
+		AmountMsat: &protos.AmountOrAny{
+			Value: &protos.AmountOrAny_Amount{
+				Amount: &protos.Amount{
+					Msat: uint64(value),
+				},
+			},
+		},
+		Preimage:    preimage,
+		Expiry:      &parsed_expiry,
+		Description: memo,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &lightning.AddInvoiceResponse{
+		PaymentRequest: invoice.Bolt11,
+		PaymentHash:    invoice.PaymentHash,
+	}, nil
+}
+
 func (c *Cln) PaymentStatus(preimageHash string) (*lightning.PaymentStatus, error) {
 	hash, err := hex.DecodeString(preimageHash)
 	if err != nil {

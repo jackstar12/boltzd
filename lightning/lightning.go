@@ -37,7 +37,7 @@ type LightningInfo struct {
 
 type AddInvoiceResponse struct {
 	PaymentRequest string
-	PaymentHash    string
+	PaymentHash    []byte
 }
 
 type LightningNode interface {
@@ -48,7 +48,7 @@ type LightningNode interface {
 
 	//SendPayment(invoice string, feeLimit uint64, timeout int32) (<-chan *PaymentUpdate, error)
 	//PayInvoice(invoice string, maxParts uint32, timeoutSeconds int32) (int64, error)
-	//AddInvoice(value int64, preimage []byte, expiry int64, memo string) (*AddInvoiceResponse, error)
+	CreateInvoice(value int64, preimage []byte, expiry int64, memo string) (*AddInvoiceResponse, error)
 
 	NewAddress() (string, error)
 

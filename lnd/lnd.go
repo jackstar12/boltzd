@@ -121,13 +121,20 @@ func (lnd *LND) ListChannels() (*lnrpc.ListChannelsResponse, error) {
 	return lnd.client.ListChannels(lnd.ctx, &lnrpc.ListChannelsRequest{})
 }
 
-func (lnd *LND) AddInvoice(value int64, preimage []byte, expiry int64, memo string) (*lnrpc.AddInvoiceResponse, error) {
-	return lnd.client.AddInvoice(lnd.ctx, &lnrpc.Invoice{
+func (lnd *LND) CreateInvoice(value int64, preimage []byte, expiry int64, memo string) (*lightning.AddInvoiceResponse, error) {
+	invoice, err := lnd.client.AddInvoice(lnd.ctx, &lnrpc.Invoice{
 		Memo:      memo,
 		Value:     value,
 		Expiry:    expiry,
 		RPreimage: preimage,
 	})
+	if err != nil {
+		return nil, err
+	}
+	return &lightning.AddInvoiceResponse{
+		PaymentRequest: invoice.PaymentRequest,
+		PaymentHash:    invoice.RHash,
+	}, nil
 }
 
 func (lnd *LND) AddHoldInvoice(preimageHash []byte, value int64, expiry int64, memo string) (*invoicesrpc.AddHoldInvoiceResp, error) {
