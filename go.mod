@@ -14,6 +14,7 @@ require (
 	github.com/lightningnetwork/lnd/cert v1.2.1
 	github.com/ltcsuite/ltcd v0.22.1-beta
 	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/nbd-wtf/ln-decodepay v1.11.1
 	github.com/r3labs/sse v0.0.0-20210224172625-26fe804710bc
 	github.com/stretchr/testify v1.8.2
 	github.com/urfave/cli v1.22.12
