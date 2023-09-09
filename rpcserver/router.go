@@ -593,14 +593,20 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	}, nil
 }
 
-func (server *routedBoltzServer) payInvoice(invoice string, id string) (int64, error) {
-	payment, err := server.lnd.PayInvoice(invoice, 3, 30)
+func (server *routedBoltzServer) payInvoice(invoice string, id string) (uint, error) {
+	feeLimit, err := lightning.GetFeeLimit(invoice, server.chainParams)
 
 	if err != nil {
 		return 0, err
 	}
 
-	logger.Info("Paid invoice of Reverse Swap " + id + " with fee of " + utils.FormatMilliSat(payment.FeeMsat) + " satoshis")
+	payment, err := server.lightning.PayInvoice(invoice, feeLimit, 30)
+
+	if err != nil {
+		return 0, err
+	}
+
+	logger.Info("Paid invoice of Reverse Swap " + id + " with fee of " + utils.FormatMilliSat(int64(payment.FeeMsat)) + " satoshis")
 
 	return payment.FeeMsat, nil
 }

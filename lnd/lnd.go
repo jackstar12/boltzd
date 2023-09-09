@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/BoltzExchange/boltz-lnd/lightning"
 	"github.com/BoltzExchange/boltz-lnd/logger"
@@ -117,8 +118,47 @@ func (lnd *LND) PendingChannels() (*lnrpc.PendingChannelsResponse, error) {
 	return lnd.client.PendingChannels(lnd.ctx, &lnrpc.PendingChannelsRequest{})
 }
 
-func (lnd *LND) ListChannels() (*lnrpc.ListChannelsResponse, error) {
-	return lnd.client.ListChannels(lnd.ctx, &lnrpc.ListChannelsRequest{})
+func parseChannelPoint(channelPoint string) (*lightning.ChannelPoint, error) {
+	split := strings.Split(channelPoint, ":")
+	vout, err := strconv.Atoi(split[1])
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &lightning.ChannelPoint{
+		FundingTxid: split[0],
+		OutputIndex: uint32(vout),
+	}, nil
+}
+
+func (lnd *LND) ListChannels() ([]lightning.LightningChannel, error) {
+	channels, err := lnd.client.ListChannels(lnd.ctx, &lnrpc.ListChannelsRequest{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var results []lightning.LightningChannel
+
+	for _, channel := range channels.Channels {
+
+		point, err := parseChannelPoint(channel.ChannelPoint)
+
+		if err != nil {
+			logger.Warning("Could not parse channel point: " + err.Error())
+		}
+		results = append(results, lightning.LightningChannel{
+			LocalMsat:  uint(channel.LocalBalance),
+			RemoteMsat: uint(channel.RemoteBalance),
+			Capacity:   uint(channel.Capacity),
+			Id:         string(channel.ChanId),
+			PeerId:     channel.RemotePubkey,
+			Point:      *point,
+		})
+	}
+
+	return results, nil
 }
 
 func (lnd *LND) CreateInvoice(value int64, preimage []byte, expiry int64, memo string) (*lightning.AddInvoiceResponse, error) {
@@ -170,18 +210,11 @@ func (lnd *LND) GetChannelInfo(channelId uint64) (*lnrpc.ChannelEdge, error) {
 	})
 }
 
-func (lnd *LND) PayInvoice(invoice string, maxParts uint32, timeoutSeconds int32) (*lnrpc.Payment, error) {
-	feeLimit, err := lnd.getFeeLimit(invoice)
-
-	if err != nil {
-		return nil, err
-	}
-
+func (lnd *LND) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint) (*lightning.PayInvoiceResponse, error) {
 	client, err := lnd.router.SendPaymentV2(lnd.ctx, &routerrpc.SendPaymentRequest{
-		MaxParts:       maxParts,
 		PaymentRequest: invoice,
-		TimeoutSeconds: timeoutSeconds,
-		FeeLimitSat:    feeLimit,
+		TimeoutSeconds: int32(timeoutSeconds),
+		FeeLimitSat:    int64(feeLimit),
 	})
 
 	if err != nil {
@@ -197,7 +230,9 @@ func (lnd *LND) PayInvoice(invoice string, maxParts uint32, timeoutSeconds int32
 
 		switch event.Status {
 		case lnrpc.Payment_SUCCEEDED:
-			return event, nil
+			return &lightning.PayInvoiceResponse{
+				FeeMsat: uint(event.FeeMsat),
+			}, nil
 
 		case lnrpc.Payment_IN_FLIGHT:
 			// Return once all the HTLCs are in flight
@@ -208,11 +243,13 @@ func (lnd *LND) PayInvoice(invoice string, maxParts uint32, timeoutSeconds int32
 			}
 
 			if event.ValueMsat == htlcSum {
-				return event, nil
+				return &lightning.PayInvoiceResponse{
+					FeeMsat: uint(event.FeeMsat),
+				}, nil
 			}
 
 		case lnrpc.Payment_FAILED:
-			return event, errors.New(event.FailureReason.String())
+			return nil, errors.New(event.FailureReason.String())
 		}
 	}
 }

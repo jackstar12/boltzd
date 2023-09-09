@@ -16,7 +16,7 @@ func connectLightning(lightning lightning.LightningNode) *lightning.LightningInf
 	info, err := lightning.GetInfo()
 
 	if err != nil {
-		logger.Warning("Could not connect to LND: " + err.Error())
+		logger.Warning("Could not connect to lightning node: " + err.Error())
 		logger.Info(retryMessage)
 		time.Sleep(retryInterval * time.Second)
 

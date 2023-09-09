@@ -16,7 +16,7 @@ func checkVersion(name string, version string, minVersion string) {
 	versionInt, err := parseVersion(version)
 
 	if err != nil {
-		logger.Fatal("Could node parse" + name + " version: " + err.Error())
+		logger.Fatal("Could not parse " + name + " version: " + err.Error())
 	}
 
 	minVersionInt, _ := strconv.ParseInt(strings.Replace(minVersion, ".", "", 2), 10, 64)
@@ -27,7 +27,7 @@ func checkVersion(name string, version string, minVersion string) {
 }
 
 func checkLightningVersion(info *lightning.LightningInfo) {
-	checkVersion("LND", info.Version, minLndVersion)
+	//checkVersion("LND", info.Version, minLndVersion)
 }
 
 func checkBoltzVersion(boltz *boltz.Boltz) {

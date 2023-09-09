@@ -13,7 +13,6 @@ import (
 
 	"github.com/BoltzExchange/boltz-lnd/cln/protos"
 	"github.com/BoltzExchange/boltz-lnd/lightning"
-	bolt11 "github.com/nbd-wtf/ln-decodepay"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -90,12 +89,39 @@ func (c *Cln) GetInfo() (*lightning.LightningInfo, error) {
 		return nil, err
 	}
 	return &lightning.LightningInfo{
-		Pubkey:      string(info.Id),
+		Pubkey:      hex.EncodeToString(info.Id),
 		BlockHeight: info.Blockheight,
 		Version:     info.Version,
 		Network:     info.Network,
-		Synced:      *info.WarningBitcoindSync == "null" && *info.WarningLightningdSync == "null",
+		Synced:      (info.WarningBitcoindSync == nil || *info.WarningBitcoindSync == "null") && (info.WarningLightningdSync == nil || *info.WarningLightningdSync == "null"),
 	}, nil
+}
+
+func (c *Cln) ListChannels() ([]lightning.LightningChannel, error) {
+	channels, err := c.Client.ListFunds(context.Background(), &protos.ListfundsRequest{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]lightning.LightningChannel, len(channels.Channels))
+
+	for _, channel := range channels.Channels {
+
+		results = append(results, lightning.LightningChannel{
+			LocalMsat:  uint(channel.OurAmountMsat.Msat),
+			RemoteMsat: uint(channel.AmountMsat.Msat - channel.OurAmountMsat.Msat),
+			Capacity:   uint(channel.AmountMsat.Msat),
+			Id:         *channel.ShortChannelId,
+			PeerId:     hex.EncodeToString(channel.PeerId),
+			Point: lightning.ChannelPoint{
+				FundingTxid: hex.EncodeToString(channel.FundingTxid),
+				OutputIndex: channel.FundingOutput,
+			},
+		})
+
+	}
+	return results, nil
 }
 
 func (c *Cln) SanityCheck() (string, error) {
@@ -130,6 +156,25 @@ func (c *Cln) CreateInvoice(value int64, preimage []byte, expiry int64, memo str
 	return &lightning.AddInvoiceResponse{
 		PaymentRequest: invoice.Bolt11,
 		PaymentHash:    invoice.PaymentHash,
+	}, nil
+}
+
+func (c *Cln) PayInvoice(invoice string, feeLimit uint, timeoutSeconds uint) (*lightning.PayInvoiceResponse, error) {
+	delay := uint32(timeoutSeconds)
+	res, err := c.Client.Pay(context.Background(), &protos.PayRequest{
+		Bolt11:   invoice,
+		Maxdelay: &delay,
+		Maxfee: &protos.Amount{
+			Msat: uint64(feeLimit),
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &lightning.PayInvoiceResponse{
+		FeeMsat: uint(res.AmountSentMsat.Msat - res.AmountMsat.Msat),
 	}, nil
 }
 
@@ -176,83 +221,6 @@ func (c *Cln) PaymentStatus(preimageHash string) (*lightning.PaymentStatus, erro
 		Preimage:      encodeOptionalBytes(status.Preimage),
 		FeeMsat:       parseFeeMsat(status.AmountMsat, status.AmountSentMsat),
 	}, nil
-}
-
-func (c *Cln) SendPayment(invoice string, feeLimit uint64, timeout int32) (<-chan *lightning.PaymentUpdate, error) {
-	dec, err := bolt11.Decodepay(invoice)
-	if err != nil {
-		return nil, err
-	}
-
-	updateChan := make(chan *lightning.PaymentUpdate)
-
-	go func() {
-		updateChan <- &lightning.PaymentUpdate{
-			IsLastUpdate: false,
-			Update: lightning.PaymentStatus{
-				State: lightning.PaymentPending,
-				Hash:  dec.PaymentHash,
-			},
-		}
-
-		defer close(updateChan)
-
-		riskFactor := float64(0)
-		timeoutUint := uint32(timeout)
-
-		res, err := c.Client.Pay(context.Background(), &protos.PayRequest{
-			Bolt11:     invoice,
-			Riskfactor: &riskFactor,
-			RetryFor:   &timeoutUint,
-			Maxfee:     &protos.Amount{Msat: feeLimit * msatFactor},
-		})
-		if err != nil {
-			errStr := parseClnError(err)
-			updateChan <- &lightning.PaymentUpdate{
-				IsLastUpdate: true,
-				Update: lightning.PaymentStatus{
-					State:         lightning.PaymentFailed,
-					Hash:          dec.PaymentHash,
-					FailureReason: &errStr,
-				},
-			}
-
-			return
-		}
-
-		var state lightning.PaymentState
-		var preimage string
-		var failureReason *string
-
-		switch res.Status {
-		case protos.PayResponse_COMPLETE:
-			state = lightning.PaymentSucceeded
-			preimage = hex.EncodeToString(res.PaymentPreimage)
-
-		case protos.PayResponse_FAILED:
-			state = lightning.PaymentFailed
-
-			// Pay doesn't give a proper reason
-			reasonStr := paymentFailure
-			failureReason = &reasonStr
-
-		case protos.PayResponse_PENDING:
-			state = lightning.PaymentPending
-		}
-
-		updateChan <- &lightning.PaymentUpdate{
-			IsLastUpdate: true,
-			Update: lightning.PaymentStatus{
-				State:         state,
-				FailureReason: failureReason,
-				Hash:          dec.PaymentHash,
-				Preimage:      preimage,
-				FeeMsat:       parseFeeMsat(res.AmountMsat, res.AmountSentMsat),
-			},
-		}
-	}()
-
-	return updateChan, nil
 }
 
 func encodeOptionalBytes(data []byte) string {
