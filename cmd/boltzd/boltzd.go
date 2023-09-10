@@ -39,16 +39,19 @@ func Init(cfg *boltz_lnd.Config) {
 	}
 
 	err = cfg.Lightning.Connect()
+	err = cfg.LND.Connect()
 
 	if err != nil {
 		logger.Fatal("Could not initialize lightning client: " + err.Error())
 	}
 
-	lndInfo := connectLightning(cfg.Lightning)
+	info := connectLightning(cfg.Lightning)
 
-	checkLightningVersion(lndInfo)
+	checkLightningVersion(info)
 
-	chainParams := parseChain(lndInfo.Network)
+	logger.Info("Connected to lightning node: " + info.Pubkey + " (" + info.Version + ")")
+
+	chainParams := parseChain(info.Network)
 	symbol := "BTC"
 	logger.Info("Parsed chain: " + chainParams.Name)
 
