@@ -2,6 +2,7 @@ package nursery
 
 import (
 	"crypto/sha256"
+	"fmt"
 	"math"
 	"strconv"
 	"time"
@@ -86,6 +87,26 @@ func (nursery *Nursery) subscribeChannelCreationInvoice(swap database.Swap, chan
 	}()
 
 	return stopListening
+}
+
+func (nursery *Nursery) channelWatcher() {
+
+	for {
+
+		channels, err := nursery.lightning.ListChannels()
+
+		if err != nil {
+			logger.Warning("Could not query channels")
+		}
+
+		for _, channel := range channels {
+			fmt.Println(channel)
+		}
+
+		time.Sleep(10 * time.Second)
+
+	}
+
 }
 
 func (nursery *Nursery) subscribeSingleInvoice(swapId string, preimageHash []byte, invoiceChannel chan *lnrpc.Invoice, errorChannel chan error) {
