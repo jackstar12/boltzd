@@ -211,6 +211,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 
 	deposit := database.Swap{
 		Id:                  response.Id,
+		PairId:              request.PairId,
 		State:               boltzrpc.SwapState_PENDING,
 		Error:               "",
 		Status:              boltz.SwapCreated,
@@ -275,7 +276,7 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 
 	response, err := server.boltz.CreateSwap(boltz.CreateSwapRequest{
 		Type:            "submarine",
-		PairId:          server.symbol + "/" + server.symbol,
+		PairId:          request.PairId,
 		OrderSide:       "buy",
 		Invoice:         invoice.PaymentRequest,
 		RefundPublicKey: hex.EncodeToString(publicKey.SerializeCompressed()),
@@ -500,7 +501,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 
 	response, err := server.boltz.CreateReverseSwap(boltz.CreateReverseSwapRequest{
 		Type:           "reverseSubmarine",
-		PairId:         server.symbol + "/" + server.symbol,
+		PairId:         request.PairId,
 		OrderSide:      "buy",
 		InvoiceAmount:  uint64(request.Amount),
 		PreimageHash:   hex.EncodeToString(preimageHash),
@@ -519,6 +520,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 
 	reverseSwap := database.ReverseSwap{
 		Id:                  response.Id,
+		PairId:              request.PairId,
 		Status:              boltz.SwapCreated,
 		AcceptZeroConf:      request.AcceptZeroConf,
 		PrivateKey:          privateKey,
