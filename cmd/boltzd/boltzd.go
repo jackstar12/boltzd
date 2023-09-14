@@ -71,6 +71,7 @@ func Init(cfg *boltz_lnd.Config) {
 	err = swapNursery.Init(
 		boltzPubKey,
 		chainParams,
+		cfg.SwapConfig,
 		cfg.LND,
 		cfg.Boltz,
 		mempool.Init(cfg.LND, cfg.MempoolApi),

@@ -51,7 +51,7 @@ func (nursery *Nursery) subscribeChannelCreationInvoice(swap database.Swap, chan
 					}
 
 					for _, htlc := range invoice.Htlcs {
-						if string(htlc.ChanId) != expectedChannelId {
+						if fmt.Sprint(htlc.ChanId) != expectedChannelId {
 							logger.Error("Not all HTLCs of Channel Creation " + swap.Id + " were sent through the correct channel")
 							return
 						}
@@ -87,26 +87,6 @@ func (nursery *Nursery) subscribeChannelCreationInvoice(swap database.Swap, chan
 	}()
 
 	return stopListening
-}
-
-func (nursery *Nursery) channelWatcher() {
-
-	for {
-
-		channels, err := nursery.lightning.ListChannels()
-
-		if err != nil {
-			logger.Warning("Could not query channels")
-		}
-
-		for _, channel := range channels {
-			fmt.Println(channel)
-		}
-
-		time.Sleep(10 * time.Second)
-
-	}
-
 }
 
 func (nursery *Nursery) subscribeSingleInvoice(swapId string, preimageHash []byte, invoiceChannel chan *lnrpc.Invoice, errorChannel chan error) {

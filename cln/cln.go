@@ -97,18 +97,18 @@ func (c *Cln) GetInfo() (*lightning.LightningInfo, error) {
 	}, nil
 }
 
-func (c *Cln) ListChannels() ([]lightning.LightningChannel, error) {
+func (c *Cln) ListChannels() ([]*lightning.LightningChannel, error) {
 	channels, err := c.Client.ListFunds(context.Background(), &protos.ListfundsRequest{})
 
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]lightning.LightningChannel, len(channels.Channels))
+	results := make([]*lightning.LightningChannel, len(channels.Channels))
 
 	for _, channel := range channels.Channels {
 
-		results = append(results, lightning.LightningChannel{
+		results = append(results, &lightning.LightningChannel{
 			LocalMsat:  uint(channel.OurAmountMsat.Msat),
 			RemoteMsat: uint(channel.AmountMsat.Msat - channel.OurAmountMsat.Msat),
 			Capacity:   uint(channel.AmountMsat.Msat),

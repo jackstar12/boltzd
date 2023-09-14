@@ -24,6 +24,7 @@ type Nursery struct {
 	boltzPubKey string
 
 	chainParams *chaincfg.Params
+	swapConfig  *SwapConfig
 
 	lightning lightning.LightningNode
 
@@ -42,6 +43,7 @@ var eventListenersLock sync.RWMutex
 func (nursery *Nursery) Init(
 	boltzPubKey string,
 	chainParams *chaincfg.Params,
+	swapConfig *SwapConfig,
 	lnd *lnd.LND,
 	boltz *boltz.Boltz,
 	memp *mempool.Mempool,
@@ -50,6 +52,7 @@ func (nursery *Nursery) Init(
 	nursery.boltzPubKey = boltzPubKey
 
 	nursery.chainParams = chainParams
+	nursery.swapConfig = swapConfig
 
 	nursery.lnd = lnd
 	nursery.lightning = lnd
@@ -63,6 +66,10 @@ func (nursery *Nursery) Init(
 
 	blockNotifier := make(chan *chainrpc.BlockEpoch)
 	go nursery.registerBlockListener(blockNotifier)
+
+	if swapConfig != nil && swapConfig.AutoSwap {
+		go nursery.channelWatcher()
+	}
 
 	err := nursery.recoverSwaps(blockNotifier)
 

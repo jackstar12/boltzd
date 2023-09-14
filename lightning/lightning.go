@@ -49,6 +49,10 @@ type LightningChannel struct {
 	Point      ChannelPoint
 }
 
+func (c *LightningChannel) Balancedness() float64 {
+	return float64(c.LocalMsat)/float64(c.Capacity) - 0.5
+}
+
 type AddInvoiceResponse struct {
 	PaymentRequest string
 	PaymentHash    []byte
@@ -72,6 +76,6 @@ type LightningNode interface {
 	NewAddress() (string, error)
 
 	GetInfo() (*LightningInfo, error)
-	ListChannels() ([]LightningChannel, error)
+	ListChannels() ([]*LightningChannel, error)
 	//GetChannelInfo(chanId uint64) (*lnrpc.ChannelEdge, error)
 }

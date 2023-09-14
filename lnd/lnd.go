@@ -132,14 +132,14 @@ func parseChannelPoint(channelPoint string) (*lightning.ChannelPoint, error) {
 	}, nil
 }
 
-func (lnd *LND) ListChannels() ([]lightning.LightningChannel, error) {
+func (lnd *LND) ListChannels() ([]*lightning.LightningChannel, error) {
 	channels, err := lnd.client.ListChannels(lnd.ctx, &lnrpc.ListChannelsRequest{})
 
 	if err != nil {
 		return nil, err
 	}
 
-	var results []lightning.LightningChannel
+	var results []*lightning.LightningChannel
 
 	for _, channel := range channels.Channels {
 
@@ -148,7 +148,7 @@ func (lnd *LND) ListChannels() ([]lightning.LightningChannel, error) {
 		if err != nil {
 			logger.Warning("Could not parse channel point: " + err.Error())
 		}
-		results = append(results, lightning.LightningChannel{
+		results = append(results, &lightning.LightningChannel{
 			LocalMsat:  uint(channel.LocalBalance),
 			RemoteMsat: uint(channel.RemoteBalance),
 			Capacity:   uint(channel.Capacity),
