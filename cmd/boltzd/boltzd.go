@@ -1,7 +1,7 @@
 package main
 
 import (
-	boltz_lnd "github.com/BoltzExchange/boltz-lnd"
+	"github.com/BoltzExchange/boltz-lnd"
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/mempool"
@@ -27,13 +27,7 @@ func main() {
 
 	logger.Info("Parsed config and CLI arguments: " + formattedCfg)
 
-	Init(cfg)
-	Start(cfg)
-}
-
-func Init(cfg *boltz_lnd.Config) {
-
-	err := cfg.Database.Connect()
+	err = cfg.Database.Connect()
 
 	if err != nil {
 		logger.Fatal("Could not connect to database: " + err.Error())
@@ -82,17 +76,9 @@ func Init(cfg *boltz_lnd.Config) {
 		logger.Fatal("Could not start Swap nursery: " + err.Error())
 	}
 
-	err = cfg.RPC.Init(symbol, chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database)
+	errChannel := cfg.RPC.Start(symbol, chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database)
 
-	if err != nil {
-		logger.Fatal("Could not initialize Server" + err.Error())
-	}
-}
-
-func Start(cfg *boltz_lnd.Config) {
-	errChannel := cfg.RPC.Start()
-
-	err := <-errChannel
+	err = <-errChannel
 
 	if err != nil {
 		logger.Fatal("Could not start gRPC server: " + err.Error())

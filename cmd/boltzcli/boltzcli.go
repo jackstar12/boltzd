@@ -2,13 +2,11 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"path"
-
-	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/BoltzExchange/boltz-lnd/build"
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/urfave/cli"
+	"os"
+	"path"
 )
 
 func main() {
@@ -75,7 +73,7 @@ func main() {
 	}
 }
 
-func getClient(ctx *cli.Context) boltzrpc.Boltz {
+func getClient(ctx *cli.Context) boltz {
 	dataDir := ctx.GlobalString("datadir")
 	macaroonDir := path.Join(dataDir, "macaroons")
 
@@ -85,7 +83,7 @@ func getClient(ctx *cli.Context) boltzrpc.Boltz {
 	tlsCert = utils.ExpandDefaultPath(dataDir, tlsCert, "tls.cert")
 	macaroon = utils.ExpandDefaultPath(macaroonDir, macaroon, "admin.macaroon")
 
-	boltz := boltzrpc.Boltz{
+	boltz := boltz{
 		Host: ctx.GlobalString("host"),
 		Port: ctx.GlobalInt("port"),
 
@@ -94,8 +92,6 @@ func getClient(ctx *cli.Context) boltzrpc.Boltz {
 		NoMacaroons:  ctx.GlobalBool("no-macaroons"),
 		MacaroonPath: macaroon,
 	}
-
-	fmt.Println(boltz)
 
 	err := boltz.Connect()
 
