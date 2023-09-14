@@ -109,9 +109,9 @@ func (c *Cln) ListChannels() ([]*lightning.LightningChannel, error) {
 	for _, channel := range channels.Channels {
 
 		results = append(results, &lightning.LightningChannel{
-			LocalMsat:  uint(channel.OurAmountMsat.Msat),
-			RemoteMsat: uint(channel.AmountMsat.Msat - channel.OurAmountMsat.Msat),
-			Capacity:   uint(channel.AmountMsat.Msat),
+			LocalMsat:  channel.OurAmountMsat.Msat,
+			RemoteMsat: channel.AmountMsat.Msat - channel.OurAmountMsat.Msat,
+			Capacity:   channel.AmountMsat.Msat,
 			Id:         *channel.ShortChannelId,
 			PeerId:     hex.EncodeToString(channel.PeerId),
 			Point: lightning.ChannelPoint{

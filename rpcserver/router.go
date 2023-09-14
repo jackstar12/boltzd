@@ -598,6 +598,33 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	}, nil
 }
 
+func (server *routedBoltzServer) GetSwapRecommendations(_ context.Context, request *boltzrpc.GetSwapRecommendationsRequest) (*boltzrpc.GetSwapRecommendationsResponse, error) {
+	recommendations, err := server.nursery.GetSwapRecommendations()
+
+	var swaps []*boltzrpc.SwapRecommendation
+
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	for _, recommendation := range recommendations {
+		swaps = append(swaps, &boltzrpc.SwapRecommendation{
+			Type:   recommendation.Type,
+			Amount: uint64(recommendation.Amount),
+			Channel: &boltzrpc.LightningChannel{
+				Id:         recommendation.Channel.Id,
+				Capacity:   recommendation.Channel.Capacity,
+				LocalMsat:  recommendation.Channel.LocalMsat,
+				RemoteMsat: recommendation.Channel.RemoteMsat,
+			},
+		})
+	}
+
+	return &boltzrpc.GetSwapRecommendationsResponse{
+		Swaps: swaps,
+	}, nil
+}
+
 func (server *routedBoltzServer) payInvoice(invoice string, id string) (uint, error) {
 	feeLimit, err := lightning.GetFeeLimit(invoice, server.chainParams)
 

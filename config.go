@@ -101,7 +101,7 @@ func LoadConfig() *Config {
 		},
 
 		SwapConfig: &nursery.SwapConfig{
-			ChannelInbalanceThreshhold: 0,
+			ChannelImbalanceThreshhold: 0.005,
 			AutoSwap:                   false,
 		},
 

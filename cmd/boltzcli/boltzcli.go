@@ -58,6 +58,7 @@ func main() {
 		getInfoCommand,
 		getSwapCommand,
 		listSwapsCommand,
+		listSwapRecommendationsCommand,
 
 		depositCommand,
 		withdrawCommand,

@@ -11,8 +11,8 @@ import (
 )
 
 type SwapConfig struct {
-	ChannelInbalanceThreshhold float64 `long:"rpc.channel-inbalance-threshhold" description:"Threshhold to determine wheter or not a swap should be initiated"`
-	AutoSwap                   bool    `long:"rpc.auto-swap" description:"Automatically initiate swaps when a channel is inbalanced"`
+	ChannelImbalanceThreshhold float64 `long:"swap.channel-imbalance-threshhold" description:"Threshhold to determine wheter or not a swap should be initiated"`
+	AutoSwap                   bool    `long:"swap.auto-swap" description:"Automatically initiate swaps when a channel is inbalanced"`
 }
 
 func (nursery *Nursery) channelWatcher() {
@@ -38,16 +38,17 @@ type SwapRecommendation struct {
 }
 
 func (nursery *Nursery) GetSwapRecommendations() ([]*SwapRecommendation, error) {
-	if nursery.swapConfig == nil || nursery.swapConfig.ChannelInbalanceThreshhold == 0 {
+	if nursery.swapConfig == nil || nursery.swapConfig.ChannelImbalanceThreshhold == 0 {
 		return nil, errors.New("Channel inbalance threshhold not set")
 	}
 
 	channels, err := nursery.lightning.ListChannels()
+
 	if err != nil {
 		return nil, err
 	}
 
-	return getSwapRecommendations(channels, nursery.swapConfig.ChannelInbalanceThreshhold), nil
+	return getSwapRecommendations(channels, nursery.swapConfig.ChannelImbalanceThreshhold), nil
 }
 
 func getSwapRecommendations(channels []*lightning.LightningChannel, threshhold float64) []*SwapRecommendation {

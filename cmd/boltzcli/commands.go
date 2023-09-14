@@ -72,6 +72,26 @@ func swapInfo(ctx *cli.Context) error {
 	return nil
 }
 
+var listSwapRecommendationsCommand = cli.Command{
+	Name:     "swaprecommendations",
+	Category: "Info",
+	Usage:    "List recommended swaps",
+	Action:   listSwapRecommendations,
+}
+
+func listSwapRecommendations(ctx *cli.Context) error {
+	client := getClient(ctx)
+	list, err := client.GetSwapRecommendations()
+
+	if err != nil {
+		return err
+	}
+
+	printJson(list)
+
+	return nil
+}
+
 var depositCommand = cli.Command{
 	Name:     "deposit",
 	Category: "Auto",

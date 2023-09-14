@@ -49,6 +49,8 @@ service Boltz {
     will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
     */
     rpc CreateReverseSwap (CreateReverseSwapRequest) returns (CreateReverseSwapResponse);
+
+    rpc GetSwapRecommendations (GetSwapRecommendationsRequest) returns (GetSwapRecommendationsResponse);
 }
 
 enum SwapState {
@@ -227,4 +229,24 @@ message CreateReverseSwapResponse {
 
     // Only populated when 0-conf is accepted
     string claim_transaction_id = 4;
+}
+
+message LightningChannel {
+    string id = 1;
+    uint64 capacity = 2;
+    uint64 local_msat = 3;
+    uint64 remote_msat = 4;
+}
+
+message SwapRecommendation {
+    string type = 1;
+    uint64 amount = 2;
+    LightningChannel channel = 3;
+}
+
+message GetSwapRecommendationsRequest {
+}
+
+message GetSwapRecommendationsResponse {
+    repeated SwapRecommendation swaps = 1;
 }

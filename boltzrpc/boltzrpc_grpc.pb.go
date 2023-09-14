@@ -19,14 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Boltz_GetInfo_FullMethodName           = "/boltzrpc.Boltz/GetInfo"
-	Boltz_GetServiceInfo_FullMethodName    = "/boltzrpc.Boltz/GetServiceInfo"
-	Boltz_ListSwaps_FullMethodName         = "/boltzrpc.Boltz/ListSwaps"
-	Boltz_GetSwapInfo_FullMethodName       = "/boltzrpc.Boltz/GetSwapInfo"
-	Boltz_Deposit_FullMethodName           = "/boltzrpc.Boltz/Deposit"
-	Boltz_CreateSwap_FullMethodName        = "/boltzrpc.Boltz/CreateSwap"
-	Boltz_CreateChannel_FullMethodName     = "/boltzrpc.Boltz/CreateChannel"
-	Boltz_CreateReverseSwap_FullMethodName = "/boltzrpc.Boltz/CreateReverseSwap"
+	Boltz_GetInfo_FullMethodName                = "/boltzrpc.Boltz/GetInfo"
+	Boltz_GetServiceInfo_FullMethodName         = "/boltzrpc.Boltz/GetServiceInfo"
+	Boltz_ListSwaps_FullMethodName              = "/boltzrpc.Boltz/ListSwaps"
+	Boltz_GetSwapInfo_FullMethodName            = "/boltzrpc.Boltz/GetSwapInfo"
+	Boltz_Deposit_FullMethodName                = "/boltzrpc.Boltz/Deposit"
+	Boltz_CreateSwap_FullMethodName             = "/boltzrpc.Boltz/CreateSwap"
+	Boltz_CreateChannel_FullMethodName          = "/boltzrpc.Boltz/CreateChannel"
+	Boltz_CreateReverseSwap_FullMethodName      = "/boltzrpc.Boltz/CreateReverseSwap"
+	Boltz_GetSwapRecommendations_FullMethodName = "/boltzrpc.Boltz/GetSwapRecommendations"
 )
 
 // BoltzClient is the client API for Boltz service.
@@ -55,6 +56,7 @@ type BoltzClient interface {
 	// Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is set to true in the request, the daemon
 	// will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
 	CreateReverseSwap(ctx context.Context, in *CreateReverseSwapRequest, opts ...grpc.CallOption) (*CreateReverseSwapResponse, error)
+	GetSwapRecommendations(ctx context.Context, in *GetSwapRecommendationsRequest, opts ...grpc.CallOption) (*GetSwapRecommendationsResponse, error)
 }
 
 type boltzClient struct {
@@ -137,6 +139,15 @@ func (c *boltzClient) CreateReverseSwap(ctx context.Context, in *CreateReverseSw
 	return out, nil
 }
 
+func (c *boltzClient) GetSwapRecommendations(ctx context.Context, in *GetSwapRecommendationsRequest, opts ...grpc.CallOption) (*GetSwapRecommendationsResponse, error) {
+	out := new(GetSwapRecommendationsResponse)
+	err := c.cc.Invoke(ctx, Boltz_GetSwapRecommendations_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BoltzServer is the server API for Boltz service.
 // All implementations must embed UnimplementedBoltzServer
 // for forward compatibility
@@ -163,6 +174,7 @@ type BoltzServer interface {
 	// Creates a new reverse swap from lightning to onchain. If `accept_zero_conf` is set to true in the request, the daemon
 	// will not wait until the lockup transaction from Boltz is confirmed in a block, but will claim it instantly.
 	CreateReverseSwap(context.Context, *CreateReverseSwapRequest) (*CreateReverseSwapResponse, error)
+	GetSwapRecommendations(context.Context, *GetSwapRecommendationsRequest) (*GetSwapRecommendationsResponse, error)
 	mustEmbedUnimplementedBoltzServer()
 }
 
@@ -193,6 +205,9 @@ func (UnimplementedBoltzServer) CreateChannel(context.Context, *CreateChannelReq
 }
 func (UnimplementedBoltzServer) CreateReverseSwap(context.Context, *CreateReverseSwapRequest) (*CreateReverseSwapResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateReverseSwap not implemented")
+}
+func (UnimplementedBoltzServer) GetSwapRecommendations(context.Context, *GetSwapRecommendationsRequest) (*GetSwapRecommendationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSwapRecommendations not implemented")
 }
 func (UnimplementedBoltzServer) mustEmbedUnimplementedBoltzServer() {}
 
@@ -351,6 +366,24 @@ func _Boltz_CreateReverseSwap_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Boltz_GetSwapRecommendations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSwapRecommendationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BoltzServer).GetSwapRecommendations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Boltz_GetSwapRecommendations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BoltzServer).GetSwapRecommendations(ctx, req.(*GetSwapRecommendationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Boltz_ServiceDesc is the grpc.ServiceDesc for Boltz service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -389,6 +422,10 @@ var Boltz_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateReverseSwap",
 			Handler:    _Boltz_CreateReverseSwap_Handler,
+		},
+		{
+			MethodName: "GetSwapRecommendations",
+			Handler:    _Boltz_GetSwapRecommendations_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

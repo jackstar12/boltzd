@@ -77,6 +77,10 @@ func (boltz *Boltz) GetSwapInfo(id string) (*GetSwapInfoResponse, error) {
 	})
 }
 
+func (boltz *Boltz) GetSwapRecommendations() (*GetSwapRecommendationsResponse, error) {
+	return boltz.Client.GetSwapRecommendations(boltz.Ctx, &GetSwapRecommendationsRequest{})
+}
+
 func (boltz *Boltz) Deposit(inboundLiquidity uint, pairId string) (*DepositResponse, error) {
 	return boltz.Client.Deposit(boltz.Ctx, &DepositRequest{
 		InboundLiquidity: uint32(inboundLiquidity),

@@ -149,10 +149,10 @@ func (lnd *LND) ListChannels() ([]*lightning.LightningChannel, error) {
 			logger.Warning("Could not parse channel point: " + err.Error())
 		}
 		results = append(results, &lightning.LightningChannel{
-			LocalMsat:  uint(channel.LocalBalance),
-			RemoteMsat: uint(channel.RemoteBalance),
-			Capacity:   uint(channel.Capacity),
-			Id:         string(channel.ChanId),
+			LocalMsat:  uint64(channel.LocalBalance),
+			RemoteMsat: uint64(channel.RemoteBalance),
+			Capacity:   uint64(channel.Capacity),
+			Id:         fmt.Sprint(channel.ChanId),
 			PeerId:     channel.RemotePubkey,
 			Point:      *point,
 		})

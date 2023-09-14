@@ -41,9 +41,9 @@ type ChannelPoint struct {
 }
 
 type LightningChannel struct {
-	LocalMsat  uint
-	RemoteMsat uint
-	Capacity   uint
+	LocalMsat  uint64
+	RemoteMsat uint64
+	Capacity   uint64
 	Id         string
 	PeerId     string
 	Point      ChannelPoint
