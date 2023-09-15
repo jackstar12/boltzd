@@ -294,6 +294,8 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 
 	swap := database.Swap{
 		Id:                  response.Id,
+		PairId:              request.PairId,
+		ChanId:              request.ChanId,
 		State:               boltzrpc.SwapState_PENDING,
 		Error:               "",
 		Status:              boltz.InvoiceSet,
@@ -524,6 +526,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	reverseSwap := database.ReverseSwap{
 		Id:                  response.Id,
 		PairId:              request.PairId,
+		ChanId:              request.ChanId,
 		Status:              boltz.SwapCreated,
 		AcceptZeroConf:      request.AcceptZeroConf,
 		PrivateKey:          privateKey,

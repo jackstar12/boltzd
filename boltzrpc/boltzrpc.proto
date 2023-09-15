@@ -72,7 +72,7 @@ enum SwapState {
 
 message SwapInfo {
     string id = 1;
-    string pairId = 2;
+    string pair_id = 2;
 
     SwapState state = 3;
     string error = 4;
@@ -93,6 +93,8 @@ message SwapInfo {
     `lockup_address` back to the LND wallet and save the refund transaction id to the database.
     */
     string refund_transaction_id = 14;
+
+    string chan_id = 15;
 }
 
 /*
@@ -129,7 +131,8 @@ message ReverseSwapInfo {
     uint32 timeout_block_height = 11;
     string lockup_transaction_id = 12;
     string claim_transaction_id = 13;
-    string pairId = 14;
+    string pair_id = 14;
+    string chan_id = 15;
 }
 
 message GetInfoRequest {}
@@ -195,7 +198,8 @@ message DepositResponse {
 
 message CreateSwapRequest {
     int64 amount = 1;
-    string pairId = 2;
+    string pair_id = 2;
+    string chan_id = 5;
 }
 message CreateSwapResponse {
     string id = 1;
@@ -220,7 +224,8 @@ message CreateReverseSwapRequest {
     // If no value is set, the daemon will query a new P2WKH address from LND
     string address = 2;
     bool accept_zero_conf = 3;
-    string pairId = 4;
+    string pair_id = 4;
+    string chan_id = 5;
 }
 message CreateReverseSwapResponse {
     string id = 1;

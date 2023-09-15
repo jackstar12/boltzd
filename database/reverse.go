@@ -14,6 +14,7 @@ import (
 type ReverseSwap struct {
 	Id                  string
 	PairId              string
+	ChanId              string
 	State               boltzrpc.SwapState
 	Error               string
 	Status              boltz.SwapUpdateEvent
@@ -32,6 +33,7 @@ type ReverseSwap struct {
 type ReverseSwapSerialized struct {
 	Id                  string
 	PairId              string
+	ChanId              string
 	State               string
 	Error               string
 	Status              string
@@ -51,6 +53,7 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 	return ReverseSwapSerialized{
 		Id:                  reverseSwap.Id,
 		PairId:              reverseSwap.PairId,
+		ChanId:              reverseSwap.ChanId,
 		State:               boltzrpc.SwapState_name[int32(reverseSwap.State)],
 		Error:               reverseSwap.Error,
 		Status:              reverseSwap.Status.String(),
@@ -80,6 +83,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 		map[string]interface{}{
 			"id":                  &reverseSwap.Id,
 			"pairId":              &reverseSwap.PairId,
+			"chanId":              &reverseSwap.ChanId,
 			"state":               &reverseSwap.State,
 			"error":               &reverseSwap.Error,
 			"status":              &status,
@@ -173,7 +177,7 @@ func (database *Database) QueryPendingReverseSwaps() ([]ReverseSwap, error) {
 }
 
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
-	insertStatement := "INSERT INTO reverseSwaps (id, pairId, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := "INSERT INTO reverseSwaps (id, pairId, chanId, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	statement, err := database.db.Prepare(insertStatement)
 
 	if err != nil {
@@ -183,6 +187,7 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 	_, err = statement.Exec(
 		reverseSwap.Id,
 		reverseSwap.PairId,
+		reverseSwap.ChanId,
 		reverseSwap.State,
 		reverseSwap.Error,
 		reverseSwap.Status.String(),

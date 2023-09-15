@@ -14,6 +14,7 @@ import (
 type Swap struct {
 	Id                  string
 	PairId              string
+	ChanId              string
 	State               boltzrpc.SwapState
 	Error               string
 	Status              boltz.SwapUpdateEvent
@@ -31,6 +32,7 @@ type Swap struct {
 type SwapSerialized struct {
 	Id                  string
 	PairId              string
+	ChanId              string
 	State               string
 	Error               string
 	Status              string
@@ -55,6 +57,7 @@ func (swap *Swap) Serialize() SwapSerialized {
 	return SwapSerialized{
 		Id:                  swap.Id,
 		PairId:              swap.PairId,
+		ChanId:              swap.ChanId,
 		State:               boltzrpc.SwapState_name[int32(swap.State)],
 		Error:               swap.Error,
 		Status:              swap.Status.String(),
@@ -83,6 +86,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 		map[string]interface{}{
 			"id":                  &swap.Id,
 			"pairId":              &swap.PairId,
+			"chanId":              &swap.ChanId,
 			"state":               &swap.State,
 			"error":               &swap.Error,
 			"status":              &status,
@@ -186,7 +190,7 @@ func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32) ([]Swa
 }
 
 func (database *Database) CreateSwap(swap Swap) error {
-	insertStatement := "INSERT INTO swaps (id, pairId, state, error, status, privateKey, preimage, redeemScript, invoice, address, expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := "INSERT INTO swaps (id, pairId, chanId, state, error, status, privateKey, preimage, redeemScript, invoice, address, expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	statement, err := database.db.Prepare(insertStatement)
 
 	if err != nil {
@@ -202,6 +206,7 @@ func (database *Database) CreateSwap(swap Swap) error {
 	_, err = statement.Exec(
 		swap.Id,
 		swap.PairId,
+		swap.ChanId,
 		swap.State,
 		swap.Error,
 		swap.Status.String(),

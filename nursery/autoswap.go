@@ -13,6 +13,8 @@ import (
 type SwapConfig struct {
 	ChannelImbalanceThreshhold float64 `long:"swap.channel-imbalance-threshhold" description:"Threshhold to determine wheter or not a swap should be initiated"`
 	AutoSwap                   bool    `long:"swap.auto-swap" description:"Automatically initiate swaps when a channel is inbalanced"`
+	LiquidWallet               string  `long:"swap.liquid-wallet" description:"Seed phrase of liquid wallet to use for swaps"`
+	BtcWallet                  string  `long:"swap.liquid-wallet" description:"Seed phrase of bitcoin wallet to use for swaps"`
 }
 
 func (nursery *Nursery) channelWatcher() {
