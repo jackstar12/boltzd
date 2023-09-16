@@ -20,6 +20,7 @@ require (
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/urfave/cli v1.22.12
+	github.com/ybbus/jsonrpc/v3 v3.1.4
 	google.golang.org/grpc v1.58.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
 	google.golang.org/protobuf v1.31.0
