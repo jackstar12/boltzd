@@ -75,24 +75,42 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestDeposit(t *testing.T) {
+
 	client, close := setup(t)
 	defer close()
 
-	swap, err := client.Deposit(25, "BTC/BTC")
-	assert.NoError(t, err)
+	tests := []struct {
+		desc   string
+		pairId string
+		cli    func(string) string
+	}{
+		{"BTC Deposit", "BTC/BTC", btc_cli},
+		{"Liquid Deposit", "L-BTC/BTC", liquid_cli},
+	}
 
-	info, err := client.GetSwapInfo(swap.Id)
-	assert.NoError(t, err)
-	assert.Equal(t, boltzrpc.SwapState_PENDING, info.Swap.State)
+	for _, tc := range tests {
+		t.Run(tc.desc, func(t *testing.T) {
+			t.Parallel()
 
-	btc_cli("sendtoaddress " + swap.Address + " 0.0025")
-	btc_cli("-generate 1")
+			swap, err := client.Deposit(25, tc.pairId)
+			assert.NoError(t, err)
 
-	time.Sleep(500 * time.Millisecond)
+			info, err := client.GetSwapInfo(swap.Id)
+			assert.NoError(t, err)
+			assert.Equal(t, boltzrpc.SwapState_PENDING, info.Swap.State)
 
-	info, err = client.GetSwapInfo(swap.Id)
-	assert.NoError(t, err)
-	assert.Equal(t, boltzrpc.SwapState_SUCCESSFUL, info.Swap.State)
+			tc.cli("sendtoaddress " + swap.Address + " 0.0025")
+			tc.cli("-generate 1")
+
+			time.Sleep(500 * time.Millisecond)
+
+			info, err = client.GetSwapInfo(swap.Id)
+			assert.NoError(t, err)
+			assert.Equal(t, boltzrpc.SwapState_SUCCESSFUL, info.Swap.State)
+
+		})
+	}
+
 }
 
 func TestReverseSwap(t *testing.T) {
@@ -143,4 +161,8 @@ func sh(cmd string) string {
 
 func btc_cli(cmd string) string {
 	return sh("docker exec lnbits-legend-bitcoind-1 bitcoin-cli -rpcuser=lnbits -rpcpassword=lnbits -regtest " + cmd)
+}
+
+func liquid_cli(cmd string) string {
+	return sh("docker exec lnbits-legend-elementsd-1 elements-cli " + cmd)
 }
