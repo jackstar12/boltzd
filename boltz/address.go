@@ -3,6 +3,7 @@ package boltz
 import (
 	"crypto/sha256"
 	"errors"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 )
@@ -54,4 +55,13 @@ func NestedScriptHashAddress(chainParams *chaincfg.Params, redeemScript []byte) 
 	encodedAddress, err := ScriptHashAddress(chainParams, addressScript)
 
 	return encodedAddress, err
+}
+
+func PubKeyAddress(chainParams *chaincfg.Params, key *btcec.PublicKey) (string, error) {
+	witnessProg := btcutil.Hash160(key.SerializeUncompressed())
+	addr, err := btcutil.NewAddressWitnessPubKeyHash(witnessProg, chainParams)
+	if err != nil {
+		return "", err
+	}
+	return addr.EncodeAddress(), nil
 }
