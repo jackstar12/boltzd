@@ -12,7 +12,6 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/database"
 	"github.com/BoltzExchange/boltz-lnd/lightning"
 	"github.com/BoltzExchange/boltz-lnd/lnd"
-	"github.com/BoltzExchange/boltz-lnd/nursery"
 	"github.com/BoltzExchange/boltz-lnd/rpcserver"
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/BurntSushi/toml"
@@ -41,7 +40,7 @@ type Config struct {
 	RPC      *rpcserver.RpcServer `group:"RPC options"`
 	Database *database.Database   `group:"Database options"`
 
-	SwapConfig *nursery.SwapConfig `group:"Swap options"`
+	SwapConfig *rpcserver.SwapConfig `group:"Swap options"`
 
 	MempoolApi string `long:"mempool" description:"mempool.space API to use for fee estimations; set to empty string to disable"`
 
@@ -100,9 +99,13 @@ func LoadConfig() *Config {
 			ReadonlyMacaroonPath: "",
 		},
 
-		SwapConfig: &nursery.SwapConfig{
+		SwapConfig: &rpcserver.SwapConfig{
 			ChannelImbalanceThreshhold: 0.005,
-			AutoSwap:                   false,
+			AutoSwap:                   true,
+			LiquidWallet:               "",
+			BtcWallet:                  "",
+			AcceptZeroConf:             true,
+			Pair:                       "BTC/BTC",
 		},
 
 		Database: &database.Database{

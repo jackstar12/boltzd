@@ -2,6 +2,7 @@ package rpcserver
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"strconv"
@@ -44,6 +45,7 @@ func (server *RpcServer) Init(
 	boltz *boltz.Boltz,
 	nursery *nursery.Nursery,
 	database *database.Database,
+	swapConfig *SwapConfig,
 ) error {
 
 	var serverOpts []grpc.ServerOption
@@ -87,15 +89,24 @@ func (server *RpcServer) Init(
 	}
 
 	server.Grpc = grpc.NewServer(serverOpts...)
-	boltzrpc.RegisterBoltzServer(server.Grpc, &routedBoltzServer{
+	routedServer := &routedBoltzServer{
 		chainParams: chainParams,
 
-		lnd:       lnd,
-		lightning: lnd,
-		boltz:     boltz,
-		nursery:   nursery,
-		database:  database,
-	})
+		lnd:        lnd,
+		lightning:  lnd,
+		boltz:      boltz,
+		nursery:    nursery,
+		database:   database,
+		swapConfig: swapConfig,
+	}
+	boltzrpc.RegisterBoltzServer(server.Grpc, routedServer)
+
+	if swapConfig != nil && swapConfig.AutoSwap {
+		err := routedServer.StartChannelWatcher()
+		if err != nil {
+			return errors.New("Could not start channel watcher: " + err.Error())
+		}
+	}
 
 	return nil
 }

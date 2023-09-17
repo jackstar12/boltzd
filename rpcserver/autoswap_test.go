@@ -1,4 +1,4 @@
-package nursery
+package rpcserver
 
 import (
 	"testing"

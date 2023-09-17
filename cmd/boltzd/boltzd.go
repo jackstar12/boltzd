@@ -71,7 +71,6 @@ func Init(cfg *boltz_lnd.Config) {
 	err = swapNursery.Init(
 		boltzPubKey,
 		chainParams,
-		cfg.SwapConfig,
 		cfg.LND,
 		cfg.Boltz,
 		mempool.Init(cfg.LND, cfg.MempoolApi),
@@ -82,7 +81,7 @@ func Init(cfg *boltz_lnd.Config) {
 		logger.Fatal("Could not start Swap nursery: " + err.Error())
 	}
 
-	err = cfg.RPC.Init(chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database)
+	err = cfg.RPC.Init(chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database, cfg.SwapConfig)
 
 	if err != nil {
 		logger.Fatal("Could not initialize Server" + err.Error())

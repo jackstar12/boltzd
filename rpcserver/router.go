@@ -30,11 +30,12 @@ type routedBoltzServer struct {
 
 	chainParams *chaincfg.Params
 
-	lightning lightning.LightningNode
-	lnd       *lnd.LND
-	boltz     *boltz.Boltz
-	nursery   *nursery.Nursery
-	database  *database.Database
+	lightning  lightning.LightningNode
+	lnd        *lnd.LND
+	boltz      *boltz.Boltz
+	nursery    *nursery.Nursery
+	database   *database.Database
+	swapConfig *SwapConfig
 }
 
 func handleError(err error) error {
@@ -480,7 +481,12 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 			return nil, handleError(err)
 		}
 	} else {
-		var err error
+		claimAddress, err := server.swapConfig.GetAddress(server.chainParams, request.PairId)
+
+		if err != nil {
+			return nil, handleError(err)
+		}
+
 		claimAddress, err = server.lightning.NewAddress()
 
 		if err != nil {
@@ -601,8 +607,18 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 	}, nil
 }
 
-func (server *routedBoltzServer) GetSwapRecommendations(_ context.Context, request *boltzrpc.GetSwapRecommendationsRequest) (*boltzrpc.GetSwapRecommendationsResponse, error) {
-	recommendations, err := server.nursery.GetSwapRecommendations()
+func (server *routedBoltzServer) GetSwapRecommendations(_ context.Context, _ *boltzrpc.GetSwapRecommendationsRequest) (*boltzrpc.GetSwapRecommendationsResponse, error) {
+	if server.swapConfig.ChannelImbalanceThreshhold == 0 {
+		return nil, handleError(errors.New("Channel inbalance threshhold not set"))
+	}
+
+	channels, err := server.lightning.ListChannels()
+
+	if err != nil {
+		return nil, err
+	}
+
+	recommendations := getSwapRecommendations(channels, server.swapConfig.ChannelImbalanceThreshhold)
 
 	var swaps []*boltzrpc.SwapRecommendation
 
