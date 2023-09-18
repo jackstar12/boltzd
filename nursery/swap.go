@@ -99,8 +99,14 @@ func (nursery *Nursery) startBlockListener(blockNotifier chan *chainrpc.BlockEpo
 				refundTransactionId := refundTransaction.TxHash().String()
 				logger.Info("Constructed refund transaction: " + refundTransactionId)
 
+				refundTransactionHex, err := boltz.SerializeTransaction(refundTransaction)
+				if err != nil {
+					logger.Error("Could not serialize refund transaction: " + err.Error())
+					continue
+				}
+
 				// TODO: right pair?
-				err = nursery.broadcastTransaction(refundTransaction, "BTC")
+				err = nursery.broadcastTransaction(refundTransactionHex, "BTC")
 
 				if err != nil {
 					logger.Error("Could not finalize refund transaction: " + err.Error())

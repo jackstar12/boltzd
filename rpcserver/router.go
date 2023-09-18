@@ -20,7 +20,6 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/nursery"
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/zpay32"
 )
@@ -508,7 +507,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 		return nil, handleError(err)
 	}
 	if claimAddress != "" {
-		_, err := btcutil.DecodeAddress(claimAddress, server.chainParams)
+		err := boltz.ValidateAddress(server.chainParams, claimAddress, pair)
 
 		if err != nil {
 			return nil, handleError(err)

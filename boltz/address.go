@@ -6,6 +6,7 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/vulpemventures/go-elements/address"
 )
 
 func CheckSwapAddress(chainParams *chaincfg.Params, address string, redeemScript []byte, isNested bool) error {
@@ -64,4 +65,14 @@ func PubKeyAddress(chainParams *chaincfg.Params, key *btcec.PublicKey) (string, 
 		return "", err
 	}
 	return addr.EncodeAddress(), nil
+}
+
+func ValidateAddress(chainParams *chaincfg.Params, rawAddress string, pair Pair) error {
+	var err error
+	if pair == PairBtc {
+		_, err = btcutil.DecodeAddress(rawAddress, chainParams)
+	} else {
+		_, err = address.FromConfidential(rawAddress)
+	}
+	return err
 }

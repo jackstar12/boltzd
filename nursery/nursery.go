@@ -108,14 +108,8 @@ func (nursery *Nursery) findLockupVout(addressToFind string, outputs []*wire.TxO
 	return 0, errors.New("could not find lockup vout")
 }
 
-func (nursery *Nursery) broadcastTransaction(transaction *wire.MsgTx, currency string) error {
-	transactionHex, err := boltz.SerializeTransaction(transaction)
-
-	if err != nil {
-		return errors.New("could not serialize transaction: " + err.Error())
-	}
-
-	_, err = nursery.boltz.BroadcastTransaction(transactionHex, currency)
+func (nursery *Nursery) broadcastTransaction(transactionHex string, currency string) error {
+	_, err := nursery.boltz.BroadcastTransaction(transactionHex, currency)
 
 	if err != nil {
 		return errors.New("could not broadcast transaction: " + err.Error())

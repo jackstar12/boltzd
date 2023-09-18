@@ -8,6 +8,7 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2
 	github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792
+	github.com/go-errors/errors v1.4.2
 	github.com/google/logger v1.1.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
 	github.com/jessevdk/go-flags v1.5.0
@@ -20,6 +21,7 @@ require (
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/urfave/cli v1.22.12
+	github.com/vulpemventures/go-elements v0.4.5
 	github.com/ybbus/jsonrpc/v3 v3.1.4
 	google.golang.org/grpc v1.58.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
@@ -63,7 +65,6 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.2 // indirect
 	github.com/fergusstrange/embedded-postgres v1.10.0 // indirect
-	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-macaroon-bakery/macaroonpb v1.0.0 // indirect
@@ -133,6 +134,8 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20220101234140-673ab2c3ae75 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
+	github.com/vulpemventures/fastsha256 v0.0.0-20160815193821-637e65642941 // indirect
+	github.com/vulpemventures/go-secp256k1-zkp v1.1.5 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xiang90/probing v0.0.0-20221125231312-a49e3df8f510 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
