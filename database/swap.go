@@ -27,6 +27,7 @@ type Swap struct {
 	TimoutBlockHeight   uint32
 	LockupTransactionId string
 	RefundTransactionId string
+	BlindingKey         *btcec.PrivateKey
 }
 
 type SwapSerialized struct {
@@ -45,6 +46,7 @@ type SwapSerialized struct {
 	TimeoutBlockHeight  uint32
 	LockupTransactionId string
 	RefundTransactionId string
+	BlindingKey         string
 }
 
 func (swap *Swap) Serialize() SwapSerialized {
@@ -70,6 +72,7 @@ func (swap *Swap) Serialize() SwapSerialized {
 		TimeoutBlockHeight:  swap.TimoutBlockHeight,
 		LockupTransactionId: swap.LockupTransactionId,
 		RefundTransactionId: swap.RefundTransactionId,
+		BlindingKey:         formatPrivateKey(swap.BlindingKey),
 	}
 }
 
@@ -81,6 +84,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	var preimage string
 	var redeemScript string
 	var pairId string
+	var blindingKey sql.NullString
 
 	err := scanRow(
 		rows,
@@ -100,6 +104,7 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 			"timeoutBlockheight":  &swap.TimoutBlockHeight,
 			"lockupTransactionId": &swap.LockupTransactionId,
 			"refundTransactionId": &swap.RefundTransactionId,
+			"blindingKey":         &blindingKey,
 		},
 	)
 
@@ -109,13 +114,11 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 
 	swap.Status = boltz.ParseEvent(status)
 
-	privateKeyBytes, err := hex.DecodeString(privateKey)
+	swap.PrivateKey, err = ParsePrivateKey(privateKey)
 
 	if err != nil {
 		return nil, err
 	}
-
-	swap.PrivateKey, _ = parsePrivateKey(privateKeyBytes)
 
 	if preimage != "" {
 		swap.Preimage, err = hex.DecodeString(preimage)
@@ -135,6 +138,13 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	if blindingKey.Valid {
+		swap.BlindingKey, err = ParsePrivateKey(blindingKey.String)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &swap, err
@@ -197,7 +207,7 @@ func (database *Database) QueryRefundableSwaps(currentBlockHeight uint32) ([]Swa
 }
 
 func (database *Database) CreateSwap(swap Swap) error {
-	insertStatement := "INSERT INTO swaps (id, pairId, chanId, state, error, status, privateKey, preimage, redeemScript, invoice, address, expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := "INSERT INTO swaps (id, pairId, chanId, state, error, status, privateKey, preimage, redeemScript, invoice, address, expectedAmount, timeoutBlockheight, lockupTransactionId, refundTransactionId, blindingKey) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	statement, err := database.db.Prepare(insertStatement)
 
 	if err != nil {
@@ -226,6 +236,7 @@ func (database *Database) CreateSwap(swap Swap) error {
 		swap.TimoutBlockHeight,
 		swap.LockupTransactionId,
 		swap.RefundTransactionId,
+		formatPrivateKey(swap.BlindingKey),
 	)
 
 	if err != nil {

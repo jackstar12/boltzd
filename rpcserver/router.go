@@ -233,6 +233,14 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 		RefundTransactionId: "",
 	}
 
+	if pair == boltz.PairLiquid {
+		deposit.BlindingKey, err = database.ParsePrivateKey(response.BlindingKey)
+
+		if err != nil {
+			return nil, handleError(err)
+		}
+	}
+
 	err = boltz.CheckSwapScript(deposit.RedeemScript, preimageHash, deposit.PrivateKey, deposit.TimoutBlockHeight)
 
 	if err != nil {
@@ -321,6 +329,14 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 		TimoutBlockHeight:   response.TimeoutBlockHeight,
 		LockupTransactionId: "",
 		RefundTransactionId: "",
+	}
+
+	if pair == boltz.PairLiquid {
+		swap.BlindingKey, err = database.ParsePrivateKey(response.BlindingKey)
+
+		if err != nil {
+			return nil, handleError(err)
+		}
 	}
 
 	err = boltz.CheckSwapScript(swap.RedeemScript, invoice.PaymentHash, swap.PrivateKey, swap.TimoutBlockHeight)
@@ -565,6 +581,13 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 		ClaimTransactionId:  "",
 	}
 
+	if pair == boltz.PairLiquid {
+		reverseSwap.BlindingKey, err = database.ParsePrivateKey(response.BlindingKey)
+
+		if err != nil {
+			return nil, handleError(err)
+		}
+	}
 	err = boltz.CheckReverseSwapScript(reverseSwap.RedeemScript, preimageHash, privateKey, response.TimeoutBlockHeight)
 
 	if err != nil {

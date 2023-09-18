@@ -95,6 +95,7 @@ message SwapInfo {
     string refund_transaction_id = 14;
 
     string chan_id = 15;
+    string blinding_key = 16;
 }
 
 /*
@@ -133,6 +134,7 @@ message ReverseSwapInfo {
     string claim_transaction_id = 13;
     string pair_id = 14;
     string chan_id = 15;
+    string blinding_key = 16;
 }
 
 message GetInfoRequest {}

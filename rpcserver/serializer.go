@@ -24,6 +24,7 @@ func serializeSwap(swap *database.Swap) *boltzrpc.SwapInfo {
 		TimeoutBlockHeight:  serializedSwap.TimeoutBlockHeight,
 		LockupTransactionId: serializedSwap.LockupTransactionId,
 		RefundTransactionId: serializedSwap.RefundTransactionId,
+		BlindingKey:         serializedSwap.BlindingKey,
 	}
 }
 
@@ -59,5 +60,6 @@ func serializeReverseSwap(reverseSwap *database.ReverseSwap) *boltzrpc.ReverseSw
 		TimeoutBlockHeight:  serializedReverseSwap.TimeoutBlockHeight,
 		LockupTransactionId: serializedReverseSwap.LockupTransactionId,
 		ClaimTransactionId:  serializedReverseSwap.ClaimTransactionId,
+		BlindingKey:         serializedReverseSwap.BlindingKey,
 	}
 }

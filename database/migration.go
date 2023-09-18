@@ -197,6 +197,10 @@ func (database *Database) performMigration(fromVersion int) error {
 		if err != nil {
 			return err
 		}
+		_, err = database.db.Exec("ALTER TABLE swaps ADD COLUMN blindingKey VARCHAR")
+		if err != nil {
+			return err
+		}
 
 		_, err = database.db.Exec("UPDATE swaps SET pairId = 'BTC/BTC' WHERE pairId IS NULL")
 		if err != nil {
@@ -208,6 +212,10 @@ func (database *Database) performMigration(fromVersion int) error {
 			return err
 		}
 		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN chanId VARCHAR")
+		if err != nil {
+			return err
+		}
+		_, err = database.db.Exec("ALTER TABLE reverseSwaps ADD COLUMN blindingKey VARCHAR")
 		if err != nil {
 			return err
 		}

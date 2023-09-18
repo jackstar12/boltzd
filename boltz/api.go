@@ -108,6 +108,7 @@ type CreateSwapResponse struct {
 	AcceptZeroConf     bool   `json:"acceptZeroConf"`
 	ExpectedAmount     uint64 `json:"expectedAmount"`
 	TimeoutBlockHeight uint32 `json:"timeoutBlockHeight"`
+	BlindingKey        string `json:"blindingKey"`
 
 	Error string `json:"error"`
 }
@@ -167,6 +168,7 @@ type CreateReverseSwapResponse struct {
 	RedeemScript       string `json:"redeemScript"`
 	LockupAddress      string `json:"lockupAddress"`
 	TimeoutBlockHeight uint32 `json:"TimeoutBlockHeight"`
+	BlindingKey        string `json:"blindingKey"`
 
 	Error string `json:"error"`
 }

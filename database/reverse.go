@@ -28,6 +28,7 @@ type ReverseSwap struct {
 	TimeoutBlockHeight  uint32
 	LockupTransactionId string
 	ClaimTransactionId  string
+	BlindingKey         *btcec.PrivateKey
 }
 
 type ReverseSwapSerialized struct {
@@ -47,6 +48,7 @@ type ReverseSwapSerialized struct {
 	TimeoutBlockHeight  uint32
 	LockupTransactionId string
 	ClaimTransactionId  string
+	BlindingKey         string
 }
 
 func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
@@ -67,6 +69,7 @@ func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 		TimeoutBlockHeight:  reverseSwap.TimeoutBlockHeight,
 		LockupTransactionId: reverseSwap.LockupTransactionId,
 		ClaimTransactionId:  reverseSwap.ClaimTransactionId,
+		BlindingKey:         formatPrivateKey(reverseSwap.BlindingKey),
 	}
 }
 
@@ -78,6 +81,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	var preimage string
 	var redeemScript string
 	var pairId string
+	var blindingKey sql.NullString
 
 	err := scanRow(
 		rows,
@@ -98,6 +102,7 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 			"timeoutBlockheight":  &reverseSwap.TimeoutBlockHeight,
 			"lockupTransactionId": &reverseSwap.LockupTransactionId,
 			"claimTransactionId":  &reverseSwap.ClaimTransactionId,
+			"blindingKey":         &blindingKey,
 		},
 	)
 
@@ -106,13 +111,13 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	}
 
 	reverseSwap.Status = boltz.ParseEvent(status)
-	privateKeyBytes, err := hex.DecodeString(privateKey)
+
+	reverseSwap.PrivateKey, err = ParsePrivateKey(privateKey)
 
 	if err != nil {
 		return nil, err
 	}
 
-	reverseSwap.PrivateKey, _ = parsePrivateKey(privateKeyBytes)
 	reverseSwap.Preimage, err = hex.DecodeString(preimage)
 
 	if err != nil {
@@ -125,6 +130,13 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	if blindingKey.Valid {
+		reverseSwap.BlindingKey, err = ParsePrivateKey(blindingKey.String)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &reverseSwap, err
@@ -184,7 +196,7 @@ func (database *Database) QueryPendingReverseSwaps() ([]ReverseSwap, error) {
 }
 
 func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
-	insertStatement := "INSERT INTO reverseSwaps (id, pairId, chanId, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	insertStatement := "INSERT INTO reverseSwaps (id, pairId, chanId, state, error, status, acceptZeroConf, privateKey, preimage, redeemScript, invoice, claimAddress, expectedAmount, timeoutBlockheight, lockupTransactionId, claimTransactionId, blindingKey) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	statement, err := database.db.Prepare(insertStatement)
 
 	if err != nil {
@@ -208,6 +220,7 @@ func (database *Database) CreateReverseSwap(reverseSwap ReverseSwap) error {
 		reverseSwap.TimeoutBlockHeight,
 		reverseSwap.LockupTransactionId,
 		reverseSwap.ClaimTransactionId,
+		formatPrivateKey(reverseSwap.BlindingKey),
 	)
 
 	if err != nil {
