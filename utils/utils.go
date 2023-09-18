@@ -4,10 +4,12 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/BoltzExchange/boltz-lnd/boltz"
 )
 
-func CurrencyFromPair(pair string) string {
-	return strings.Split(pair, "/")[0]
+func CurrencyFromPair(pair boltz.Pair) string {
+	return strings.Split(string(pair), "/")[0]
 }
 
 // TODO: test this on real network

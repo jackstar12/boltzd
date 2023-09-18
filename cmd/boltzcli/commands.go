@@ -8,6 +8,7 @@ import (
 	"path"
 	"strconv"
 
+	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/urfave/cli"
 )
@@ -114,7 +115,8 @@ var depositCommand = cli.Command{
 
 func deposit(ctx *cli.Context) error {
 	client := getClient(ctx)
-	response, err := client.Deposit(ctx.Uint("inbound"), ctx.String("pair"))
+	pair, err := boltz.ParsePair(ctx.String("pair"))
+	response, err := client.Deposit(ctx.Uint("inbound"), string(pair))
 
 	if err != nil {
 		return err
@@ -133,7 +135,7 @@ func deposit(ctx *cli.Context) error {
 	}
 
 	smallestUnitName := utils.GetSmallestUnitName(info.Symbol) + "s"
-	timeoutHours := utils.BlocksToHours(response.TimeoutBlockHeight-info.BlockHeight, utils.GetBlockTime(ctx.String("pair")))
+	timeoutHours := utils.BlocksToHours(response.TimeoutBlockHeight-info.BlockHeight, utils.GetBlockTime(pair))
 
 	fmt.Println("You will receive your deposit in a lightning channel. If you do not have a channel with sufficient capacity yet, Boltz will open a channel.")
 	fmt.Println("The fees for this service are:")

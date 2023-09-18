@@ -13,7 +13,7 @@ import (
 
 type ReverseSwap struct {
 	Id                  string
-	PairId              string
+	PairId              boltz.Pair
 	ChanId              string
 	State               boltzrpc.SwapState
 	Error               string
@@ -52,7 +52,7 @@ type ReverseSwapSerialized struct {
 func (reverseSwap *ReverseSwap) Serialize() ReverseSwapSerialized {
 	return ReverseSwapSerialized{
 		Id:                  reverseSwap.Id,
-		PairId:              reverseSwap.PairId,
+		PairId:              string(reverseSwap.PairId),
 		ChanId:              reverseSwap.ChanId,
 		State:               boltzrpc.SwapState_name[int32(reverseSwap.State)],
 		Error:               reverseSwap.Error,
@@ -77,12 +77,13 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	var privateKey string
 	var preimage string
 	var redeemScript string
+	var pairId string
 
 	err := scanRow(
 		rows,
 		map[string]interface{}{
 			"id":                  &reverseSwap.Id,
-			"pairId":              &reverseSwap.PairId,
+			"pairId":              &pairId,
 			"chanId":              &reverseSwap.ChanId,
 			"state":               &reverseSwap.State,
 			"error":               &reverseSwap.Error,
@@ -119,6 +120,12 @@ func parseReverseSwap(rows *sql.Rows) (*ReverseSwap, error) {
 	}
 
 	reverseSwap.RedeemScript, err = hex.DecodeString(redeemScript)
+
+	reverseSwap.PairId, err = boltz.ParsePair(pairId)
+
+	if err != nil {
+		return nil, err
+	}
 
 	return &reverseSwap, err
 }

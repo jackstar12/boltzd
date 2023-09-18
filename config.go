@@ -40,7 +40,7 @@ type Config struct {
 	RPC      *rpcserver.RpcServer `group:"RPC options"`
 	Database *database.Database   `group:"Database options"`
 
-	SwapConfig *rpcserver.SwapConfig `group:"Swap options"`
+	Swap *rpcserver.SwapConfig `group:"Swap options"`
 
 	MempoolApi string `long:"mempool" description:"mempool.space API to use for fee estimations; set to empty string to disable"`
 
@@ -99,13 +99,13 @@ func LoadConfig() *Config {
 			ReadonlyMacaroonPath: "",
 		},
 
-		SwapConfig: &rpcserver.SwapConfig{
-			ChannelImbalanceThreshhold: 0.005,
-			AutoSwap:                   true,
+		Swap: &rpcserver.SwapConfig{
+			ChannelImbalanceThreshhold: 0,
+			AutoSwap:                   false,
 			LiquidWallet:               "",
 			BtcWallet:                  "",
-			AcceptZeroConf:             true,
-			Pair:                       "BTC/BTC",
+			AcceptZeroConf:             false,
+			Pair:                       boltz.PairBtc,
 		},
 
 		Database: &database.Database{

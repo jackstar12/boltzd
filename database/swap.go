@@ -13,7 +13,7 @@ import (
 
 type Swap struct {
 	Id                  string
-	PairId              string
+	PairId              boltz.Pair
 	ChanId              string
 	State               boltzrpc.SwapState
 	Error               string
@@ -56,7 +56,7 @@ func (swap *Swap) Serialize() SwapSerialized {
 
 	return SwapSerialized{
 		Id:                  swap.Id,
-		PairId:              swap.PairId,
+		PairId:              string(swap.PairId),
 		ChanId:              swap.ChanId,
 		State:               boltzrpc.SwapState_name[int32(swap.State)],
 		Error:               swap.Error,
@@ -80,12 +80,13 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	var privateKey string
 	var preimage string
 	var redeemScript string
+	var pairId string
 
 	err := scanRow(
 		rows,
 		map[string]interface{}{
 			"id":                  &swap.Id,
-			"pairId":              &swap.PairId,
+			"pairId":              &pairId,
 			"chanId":              &swap.ChanId,
 			"state":               &swap.State,
 			"error":               &swap.Error,
@@ -125,6 +126,12 @@ func parseSwap(rows *sql.Rows) (*Swap, error) {
 	}
 
 	swap.RedeemScript, err = hex.DecodeString(redeemScript)
+
+	if err != nil {
+		return nil, err
+	}
+
+	swap.PairId, err = boltz.ParsePair(pairId)
 
 	if err != nil {
 		return nil, err

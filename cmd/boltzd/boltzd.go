@@ -81,7 +81,7 @@ func Init(cfg *boltz_lnd.Config) {
 		logger.Fatal("Could not start Swap nursery: " + err.Error())
 	}
 
-	err = cfg.RPC.Init(chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database, cfg.SwapConfig)
+	err = cfg.RPC.Init(chainParams, cfg.LND, cfg.Boltz, swapNursery, cfg.Database, cfg.Swap)
 
 	if err != nil {
 		logger.Fatal("Could not initialize Server" + err.Error())

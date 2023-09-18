@@ -314,7 +314,7 @@ func (nursery *Nursery) handleSwapStatus(swap *database.Swap, channelCreation *d
 			int64(swapRates.SubmarineSwap.InvoiceAmount),
 			swap.Preimage,
 			utils.CalculateInvoiceExpiry(swap.TimoutBlockHeight-info.BlockHeight, utils.GetBlockTime(swap.PairId)),
-			utils.GetSwapMemo(swap.PairId),
+			utils.GetSwapMemo(utils.CurrencyFromPair(swap.PairId)),
 		)
 
 		if err != nil {

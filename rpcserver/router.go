@@ -186,6 +186,12 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 		return nil, handleError(err)
 	}
 
+	pair, err := boltz.ParsePair(request.PairId)
+
+	if err != nil {
+		return nil, handleError(err)
+	}
+
 	response, err := server.boltz.CreateChannelCreation(boltz.CreateChannelCreationRequest{
 		Type:            "submarine",
 		PairId:          request.PairId,
@@ -212,7 +218,7 @@ func (server *routedBoltzServer) Deposit(_ context.Context, request *boltzrpc.De
 
 	deposit := database.Swap{
 		Id:                  response.Id,
-		PairId:              request.PairId,
+		PairId:              pair,
 		State:               boltzrpc.SwapState_PENDING,
 		Error:               "",
 		Status:              boltz.SwapCreated,
@@ -275,6 +281,12 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 		return nil, handleError(err)
 	}
 
+	pair, err := boltz.ParsePair(request.PairId)
+
+	if err != nil {
+		return nil, handleError(err)
+	}
+
 	response, err := server.boltz.CreateSwap(boltz.CreateSwapRequest{
 		Type:            "submarine",
 		PairId:          request.PairId,
@@ -295,7 +307,7 @@ func (server *routedBoltzServer) CreateSwap(_ context.Context, request *boltzrpc
 
 	swap := database.Swap{
 		Id:                  response.Id,
-		PairId:              request.PairId,
+		PairId:              pair,
 		ChanId:              request.ChanId,
 		State:               boltzrpc.SwapState_PENDING,
 		Error:               "",
@@ -362,12 +374,13 @@ func (server *routedBoltzServer) CreateChannel(_ context.Context, request *boltz
 
 	// TODO: get pairId id from request
 	pairId := "BTC/BTC"
+	pair, _ := boltz.ParsePair(pairId)
 
 	invoice, err := server.lnd.AddHoldInvoice(
 		preimageHash,
 		int64(request.Amount),
 		// TODO: query timeout block delta from API
-		utils.CalculateInvoiceExpiry(144, utils.GetBlockTime(pairId)),
+		utils.CalculateInvoiceExpiry(144, utils.GetBlockTime(pair)),
 		"Channel Creation from "+pairId,
 	)
 
@@ -474,6 +487,10 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 
 	claimAddress := request.Address
 
+	pair, err := boltz.ParsePair(request.PairId)
+	if err != nil {
+		return nil, handleError(err)
+	}
 	if claimAddress != "" {
 		_, err := btcutil.DecodeAddress(claimAddress, server.chainParams)
 
@@ -481,11 +498,13 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 			return nil, handleError(err)
 		}
 	} else {
-		claimAddress, err := server.swapConfig.GetAddress(server.chainParams, request.PairId)
+		/*
+			claimAddress, err := server.swapConfig.GetAddress(server.chainParams, pair)
 
-		if err != nil {
-			return nil, handleError(err)
-		}
+			if err != nil {
+				logger.Error("Could not get claim address: " + err.Error())
+			}
+		*/
 
 		claimAddress, err = server.lightning.NewAddress()
 
@@ -531,7 +550,7 @@ func (server *routedBoltzServer) CreateReverseSwap(_ context.Context, request *b
 
 	reverseSwap := database.ReverseSwap{
 		Id:                  response.Id,
-		PairId:              request.PairId,
+		PairId:              pair,
 		ChanId:              request.ChanId,
 		Status:              boltz.SwapCreated,
 		AcceptZeroConf:      request.AcceptZeroConf,

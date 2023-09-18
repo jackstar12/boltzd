@@ -2,7 +2,12 @@ package rpcserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"math"
+	"slices"
+	"time"
+
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
 	"github.com/BoltzExchange/boltz-lnd/database"
@@ -10,26 +15,37 @@ import (
 	"github.com/BoltzExchange/boltz-lnd/logger"
 	"github.com/BoltzExchange/boltz-lnd/utils"
 	"github.com/btcsuite/btcd/chaincfg"
-	"math"
-	"slices"
-	"time"
 )
 
-type SwapConfig struct {
-	ChannelImbalanceThreshhold float64 `long:"swap.channel-imbalance-threshhold" description:"Threshhold to determine wheter or not a swap should be initiated"`
-	AutoSwap                   bool    `long:"swap.auto-swap" description:"Automatically initiate swaps when a channel is inbalanced"`
-	LiquidWallet               string  `long:"swap.liquid-wallet" description:"Seed phrase of liquid wallet to use for swaps"`
-	BtcWallet                  string  `long:"swap.btc-wallet" description:"Seed phrase of bitcoin wallet to use for swaps"`
-	AcceptZeroConf             bool    `long:"swap.accept-zero-conf" description:"Whether to accept zero conf on auto swaps"`
-	Pair                       string  `long:"swap.pair" description:"Which pair to use for autoswaps"`
+type Wallet struct {
+	MnemonicFile string
+	Address      string
 }
 
-func (cfg *SwapConfig) GetAddress(chainParams *chaincfg.Params, pairId string) (string, error) {
-	privateKey, err := utils.LoadSeedPhrase(cfg.BtcWallet)
-	if err != nil {
-		return "", err
+type SwapConfig struct {
+	ChannelImbalanceThreshhold float64    `long:"swap.channel-imbalance-threshhold" description:"Threshhold to determine wheter or not a swap should be initiated"`
+	AutoSwap                   bool       `long:"swap.auto-swap" description:"Automatically initiate swaps when a channel is inbalanced"`
+	LiquidWallet               string     `long:"swap.liquid-wallet" description:"Seed phrase of liquid wallet to use for swaps"`
+	BtcWallet                  string     `long:"swap.btc-wallet" description:"Seed phrase of bitcoin wallet to use for swaps"`
+	AcceptZeroConf             bool       `long:"swap.accept-zero-conf" description:"Whether to accept zero conf on auto swaps"`
+	Pair                       boltz.Pair `long:"swap.pair" description:"Which pair to use for autoswaps"`
+}
+
+func (cfg *SwapConfig) GetAddress(chainParams *chaincfg.Params, pair boltz.Pair) (string, error) {
+	switch pair {
+	case boltz.PairBtc:
+		if cfg.BtcWallet != "" {
+			privateKey, err := utils.LoadSeedPhrase(cfg.BtcWallet)
+			if err != nil {
+				return "", err
+			}
+			return boltz.PubKeyAddress(chainParams, privateKey.PubKey())
+		} else {
+			return "", errors.New("No btc wallet configured")
+		}
+		// TODO: case boltz.PairLiquid:
 	}
-	return boltz.PubKeyAddress(chainParams, privateKey.PubKey())
+	return "", errors.New("unknown pair")
 
 }
 
@@ -97,7 +113,7 @@ func (server *routedBoltzServer) StartChannelWatcher() error {
 							Amount:         int64(recommendation.Amount),
 							Address:        address,
 							AcceptZeroConf: cfg.AcceptZeroConf,
-							PairId:         cfg.Pair,
+							PairId:         string(cfg.Pair),
 							ChanId:         recommendation.Channel.Id,
 						})
 						if err != nil {
@@ -109,7 +125,7 @@ func (server *routedBoltzServer) StartChannelWatcher() error {
 					if !slices.ContainsFunc(swaps, check) {
 						_, err := server.CreateSwap(context.Background(), &boltzrpc.CreateSwapRequest{
 							Amount: int64(recommendation.Amount),
-							PairId: cfg.Pair,
+							PairId: string(cfg.Pair),
 							ChanId: recommendation.Channel.Id,
 						})
 						if err != nil {
