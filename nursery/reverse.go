@@ -2,14 +2,11 @@ package nursery
 
 import (
 	"encoding/hex"
-	"fmt"
+	"strconv"
+
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/go-errors/errors"
-	"github.com/vulpemventures/go-elements/address"
-	"github.com/vulpemventures/go-elements/confidential"
-	"github.com/vulpemventures/go-elements/payment"
 	"github.com/vulpemventures/go-elements/transaction"
-	"strconv"
 
 	"github.com/BoltzExchange/boltz-lnd/boltz"
 	"github.com/BoltzExchange/boltz-lnd/boltzrpc"
@@ -94,9 +91,9 @@ func (nursery *Nursery) RegisterReverseSwap(reverseSwap database.ReverseSwap, cl
 	return claimTransactionIdChan
 }
 
-func (nursery *Nursery) constructClaimTxBtc(reverseSwap *database.ReverseSwap, event boltz.SwapStatusResponse) (string, string, error) {
+func (nursery *Nursery) constructClaimTxBtc(reverseSwap *database.ReverseSwap, lockupTxHex string, feeSatPerVbyte int64) (string, string, error) {
 
-	lockupTransactionRaw, err := hex.DecodeString(event.Transaction.Hex)
+	lockupTransactionRaw, err := hex.DecodeString(lockupTxHex)
 
 	if err != nil {
 		return "", "", errors.New("Could not decode lockup transaction: " + err.Error())
@@ -131,14 +128,6 @@ func (nursery *Nursery) constructClaimTxBtc(reverseSwap *database.ReverseSwap, e
 	if err != nil {
 		return "", "", errors.New("Could not decode claim address of Reverse Swap: " + err.Error())
 	}
-
-	feeSatPerVbyte, err := nursery.mempool.GetFeeEstimation()
-
-	if err != nil {
-		return "", "", errors.New("Could not get LND fee estimation: " + err.Error())
-	}
-
-	logger.Info("Using fee of " + strconv.FormatInt(feeSatPerVbyte, 10) + " sat/vbyte for claim transaction")
 
 	claimTransaction, err := boltz.ConstructTransaction(
 		[]boltz.OutputDetails{
@@ -188,102 +177,6 @@ func (nursery *Nursery) findVout(tx *transaction.Transaction, addr string) (uint
 	return 0, errors.New("could not find lockup vout")
 }
 
-const LASSET = "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
-
-func (nursery *Nursery) constructClaimTxLiquid(reverseSwap *database.ReverseSwap, event boltz.SwapStatusResponse) (string, string, error) {
-	net, _ := address.NetworkForAddress(reverseSwap.ClaimAddress)
-
-	lockupTx, err := transaction.NewTxFromHex(event.Transaction.Hex)
-
-	if err != nil {
-		return "", "", errors.New("Could not parse lockup transaction: " + err.Error())
-	}
-
-	p, err := payment.FromScript(reverseSwap.RedeemScript, net, reverseSwap.BlindingKey.PubKey())
-	lockupAddress, err := p.WitnessScriptHash()
-
-	if err != nil {
-		return "", "", errors.New("Could not derive lockup address: " + err.Error())
-	}
-
-	// TODO
-	lockupVout, err := nursery.findVout(lockupTx, lockupAddress)
-	lockupVout = 0
-	err = nil
-
-	txOut := lockupTx.Outputs[lockupVout]
-
-	output, err := confidential.UnblindOutputWithKey(txOut, reverseSwap.BlindingKey.Serialize())
-	if err != nil {
-		return "", "", errors.New("Failed to unblind lockup tx: " + err.Error())
-	}
-
-	vOutAmount := output.Value
-
-	if vOutAmount < reverseSwap.OnchainAmount {
-		logger.Warning("Boltz locked up less onchain coins than expected. Abandoning Reverse Swap")
-	}
-
-	if err != nil {
-		return "", "", errors.New("Could not find lockup lockupVout of Reverse Swap " + reverseSwap.Id)
-	}
-
-	//logger.Info("Constructing claim transaction for Reverse Swap " + reverseSwap.Id + " with output: " + lockupTransaction.Hash().String() + ":" + strconv.Itoa(int(lockupVout)))
-
-	claimAddress, err := address.FromBlech32(reverseSwap.ClaimAddress)
-
-	fmt.Println(claimAddress)
-
-	if err != nil {
-		return "", "", errors.New("Could not decode claim address of Reverse Swap: " + err.Error())
-	}
-
-	feeSatPerVbyte, err := nursery.mempool.GetFeeEstimation()
-
-	if err != nil {
-		return "", "", errors.New("Could not get LND fee estimation: " + err.Error())
-	}
-
-	logger.Info("Using fee of " + strconv.FormatInt(feeSatPerVbyte, 10) + " sat/vbyte for claim transaction")
-
-	claimTx := &transaction.Transaction{}
-
-	hash := lockupTx.TxHash()
-	claimTx.AddInput(transaction.NewTxInput(hash[:], lockupVout))
-	//asset, _ := hex.DecodeString(LASSET)
-	//transaction.NewTxOutput(asset, confidential.ValueCommitment(), payment.From)
-
-	/*
-		claimTransaction, err := boltz.ConstructTransaction(
-			[]boltz.OutputDetails{
-				{
-					LockupTransaction: lockupTransaction,
-					Vout:              lockupVout,
-					OutputType:        boltz.SegWit,
-					RedeemScript:      reverseSwap.RedeemScript,
-					PrivateKey:        reverseSwap.PrivateKey,
-					Preimage:          reverseSwap.Preimage,
-				},
-			},
-			claimAddress,
-			feeSatPerVbyte,
-		)
-
-		if err != nil {
-			return "", "", err
-		}
-
-		serialized, err := boltz.SerializeTransaction(claimTransaction)
-
-		if err != nil {
-			return "", "", errors.New("Could not serialize tx: " + err.Error())
-		}
-
-		return claimTransaction.TxHash().String(), serialized, nil
-	*/
-	return "", "", nil
-}
-
 // TODO: fail swap after "transaction.failed" event
 func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwap, event boltz.SwapStatusResponse, claimTransactionIdChan chan string) {
 	parsedStatus := boltz.ParseEvent(event.Status)
@@ -309,11 +202,20 @@ func (nursery *Nursery) handleReverseSwapStatus(reverseSwap *database.ReverseSwa
 			return
 		}
 
+		feeSatPerVbyte, err := nursery.mempool.GetFeeEstimation()
+
+		if err != nil {
+			logger.Error("Could not get LND fee estimation: " + err.Error())
+			return
+		}
+
+		logger.Info("Using fee of " + strconv.FormatInt(feeSatPerVbyte, 10) + " sat/vbyte for claim transaction")
+
 		var claimTransactionId, serialized string
 		if reverseSwap.PairId == boltz.PairLiquid {
-			claimTransactionId, serialized, err = nursery.constructClaimTxLiquid(reverseSwap, event)
+			claimTransactionId, serialized, err = constructClaimTxLiquid(reverseSwap, event.Transaction.Hex, feeSatPerVbyte)
 		} else {
-			claimTransactionId, serialized, err = nursery.constructClaimTxBtc(reverseSwap, event)
+			claimTransactionId, serialized, err = nursery.constructClaimTxBtc(reverseSwap, event.Transaction.Hex, feeSatPerVbyte)
 		}
 
 		if err != nil {

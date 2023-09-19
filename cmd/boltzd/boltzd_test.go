@@ -85,13 +85,13 @@ func TestDeposit(t *testing.T) {
 		pairId string
 		cli    func(string) string
 	}{
-		{"BTC Deposit", "BTC/BTC", btc_cli},
-		{"Liquid Deposit", "L-BTC/BTC", liquid_cli},
+		{"BTC", "BTC/BTC", btc_cli},
+		{"Liquid", "L-BTC/BTC", liquid_cli},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
-			t.Parallel()
+			//t.Parallel()
 
 			swap, err := client.Deposit(25, tc.pairId)
 			assert.NoError(t, err)
@@ -119,19 +119,21 @@ func TestReverseSwap(t *testing.T) {
 	defer close()
 
 	tests := []struct {
-		desc   string
-		pairId string
-		cli    func(string) string
+		desc     string
+		pairId   string
+		zeroConf bool
+		cli      func(string) string
 	}{
-		{"BTC", "BTC/BTC", btc_cli},
-		{"Liquid", "L-BTC/BTC", liquid_cli},
+		{"BTC", "BTC/BTC", false, btc_cli},
+		//{"BTC-ZeroConf", "BTC/BTC", true, btc_cli},
+		{"Liquid", "L-BTC/BTC", true, liquid_cli},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			address := tc.cli("getnewaddress")
 			fmt.Println("New address: " + address)
-			swap, err := client.CreateReverseSwap(250000, address, true, tc.pairId)
+			swap, err := client.CreateReverseSwap(250000, address, tc.zeroConf, tc.pairId)
 			assert.NoError(t, err)
 
 			time.Sleep(500 * time.Millisecond)
@@ -140,31 +142,20 @@ func TestReverseSwap(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, boltzrpc.SwapState_PENDING, info.ReverseSwap.State)
 
-			btc_cli("-generate 1")
-			liquid_cli("-generate 1")
-			liquid_cli("rescanblockchain")
-			time.Sleep(50000 * time.Millisecond)
+			if tc.zeroConf {
+				time.Sleep(100 * time.Millisecond)
+			} else {
+				btc_cli("-generate 1")
+				liquid_cli("-generate 1")
+				liquid_cli("rescanblockchain")
+				time.Sleep(500 * time.Millisecond)
+			}
 
 			info, err = client.GetSwapInfo(swap.Id)
 			assert.NoError(t, err)
 			assert.Equal(t, boltzrpc.SwapState_SUCCESSFUL, info.ReverseSwap.State)
 		})
 	}
-}
-
-func TestReverseSwapZeroConf(t *testing.T) {
-	client, close := setup(t)
-	defer close()
-
-	swap, err := client.CreateReverseSwap(250000, "", true, "BTC/BTC")
-	assert.NoError(t, err)
-
-	time.Sleep(100 * time.Millisecond)
-
-	info, err := client.GetSwapInfo(swap.Id)
-	assert.NoError(t, err)
-	assert.Equal(t, boltzrpc.SwapState_SUCCESSFUL, info.ReverseSwap.State)
-
 }
 
 func sh(cmd string) string {
